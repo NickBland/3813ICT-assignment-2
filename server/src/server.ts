@@ -7,11 +7,9 @@ const app: Express = express();
 app.use(express.urlencoded({ extended: true })); // Enable URL parsing middleware
 app.use(express.json()); // Enable JSON parsing middleware
 
-///// DEFINE ROUTES /////
-import healthcheck from "./routes/healthcheck"; // Simple Healthcheck route, returns 200 OK on GET request
-
-///// USE ROUTES /////
-app.use("/healthcheck", healthcheck);
+///// DEFINE & USE ROUTES /////
+import { routes } from "./routes/index"; // Gather all sub-routes fron the index file
+app.use("/", routes); // Push them to the root URL
 
 ///// START SERVER /////
 app.listen(PORT, () => {
