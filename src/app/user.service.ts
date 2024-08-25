@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { User } from "./user";
+import { Observable } from "rxjs";
 
 @Injectable({
   providedIn: "root",
@@ -25,18 +26,17 @@ export class UserService {
     return this.users$;
   }
 
-  // Login a user
-  loginUser(username: string, password: string) {
-    this.httpClient
-      .post<User>(`${this.apiURL}/api/user/login`, {
-        username,
-        password,
-      })
-      .subscribe((user) => {
-        this.user$.set(user);
-      });
+  // Get a user by username
+  getUser(username: string) {
+    return this.httpClient.get<User>(`${this.apiURL}/api/user/${username}`);
+  }
 
-    return this.user$;
+  // Login a user
+  loginUser(username: string, password: string): Observable<User> {
+    return this.httpClient.post<User>(`${this.apiURL}/api/user/login`, {
+      username,
+      password,
+    });
   }
 
   // Logout a user

@@ -1,3 +1,6 @@
+@if (error) {
+    <app-error [error]="error"></app-error>
+}
 <form [formGroup]="loginForm" (submit)="submitLogin()">
     <div class="mb-3">
         <label for="email" class="form-label" >Username</label>
