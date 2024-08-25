@@ -6,9 +6,12 @@
                 <a class="nav-link" routerLink="/">Home</a>
             </li>
             <li class="nav-item" routerLinkActive="active">
-                <a class="nav-link" routerLink="/profile">Profile</a>
+                <a class="nav-link" routerLink="/users">Users</a>
             </li>
             @if (loggedIn$()) {
+                <li class="nav-item" routerLinkActive="active">
+                    <a class="nav-link" routerLink="/profile">Profile</a>
+                </li>
                 <button class="btn btn-danger" (click)="logout()">Logout</button>
             } @else {
                 <li class="nav-item" routerLinkActive="active">

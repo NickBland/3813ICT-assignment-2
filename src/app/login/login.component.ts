@@ -1,17 +1,24 @@
 import { Component, OnInit, Signal, effect } from "@angular/core";
 import { Router } from "@angular/router";
-import { FormsModule, NgForm } from "@angular/forms";
+import {
+  ReactiveFormsModule,
+  FormGroup,
+  FormControl,
+  Validators,
+} from "@angular/forms";
 import { UserService } from "../user.service";
 
 @Component({
   selector: "app-login",
   standalone: true,
-  imports: [FormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: "./login.component.html",
   styleUrl: "./login.component.scss",
 })
 export class LoginComponent implements OnInit {
   loggedIn$ = {} as Signal<boolean>;
+
+  loginForm: FormGroup;
 
   constructor(private userService: UserService, private router: Router) {
     effect(() => {
@@ -19,13 +26,19 @@ export class LoginComponent implements OnInit {
         this.router.navigate(["/profile"]);
       }
     });
+
+    // Initialise the login form, with two form controls: username and password
+    this.loginForm = new FormGroup({
+      username: new FormControl("", [Validators.required]),
+      password: new FormControl("", [Validators.required]),
+    });
   }
 
   ngOnInit() {
     this.loggedIn$ = this.userService.loggedIn$;
   }
 
-  onSubmit(form: NgForm) {
-    this.userService.loginUser(form.value.username, form.value.password);
+  submitLogin() {
+    this.userService.loginUser(this.loginForm.value.username, this.loginForm.value.password);
   }
 }

@@ -1,11 +1,21 @@
-<form #myForm="ngForm" (ngSubmit)="onSubmit(myForm)">
+<form [formGroup]="loginForm" (submit)="submitLogin()">
     <div class="mb-3">
         <label for="email" class="form-label" >Username</label>
-        <input type="email" class="form-control" id="username" ngModel name="username">
+        <input type="email" class="form-control" id="username" formControlName="username">
+        @if (loginForm.controls['username'].invalid && loginForm.controls['username'].touched) {
+            <div class="text-danger">
+                Username is required
+            </div>
+        }
     </div>
     <div class="mb-3">
         <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" id="password" ngModel name="password">
+        <input type="password" class="form-control" id="password" formControlName="password">
+        @if (loginForm.controls['password'].invalid && loginForm.controls['password'].touched) {
+            <div class="text-danger">
+                Password is required
+            </div>
+        }
     </div>
-    <button type="submit" class="btn btn-primary">Submit</button>
+    <button type="submit" class="btn btn-primary" [disabled]="!loginForm.valid">Submit</button>
 </form>
