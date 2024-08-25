@@ -3,6 +3,15 @@ import fs from "fs";
 
 export const login: Router = express.Router(); // Export the login router
 
+const dummyUser = {
+  username: "",
+  name: "",
+  email: "",
+  roles: [""],
+  groups: [""],
+  loggedIn: false,
+};
+
 login.post("/api/user/login", (req: Request, res: Response) => {
   if (!req.body.username || !req.body.password) {
     return res.status(400).send("Invalid request");
@@ -24,9 +33,12 @@ login.post("/api/user/login", (req: Request, res: Response) => {
 
   // If user does not exist, return 401. Otherwise, return the user data (NOT PASSWORD)
   if (!user) {
-    return res.status(401).send({ valid: false });
+    // Return a dummy user object with the username, and loggedIn set to false
+    dummyUser.username = receivedData.username;
+    return res.status(401).send(dummyUser);
   } else {
-    delete user.password; // Remove the password from the response
+    delete user.password; // Remove the password property from the response
+    user.loggedIn = true; // Add the loggedIn property to the user object
     return res.send(user);
   }
 });
