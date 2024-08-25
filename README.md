@@ -98,9 +98,9 @@ These are the routes I plan to implement. While this isn't concrete and could ch
 | Route                   | Description                                                                                                        |
 |-------------------------|--------------------------------------------------------------------------------------------------------------------|
 | /                       | Should show a simple design on what the application is                                                             |
-| /login                  | A form to allow users to log in                                                                                    |
-| /profile                | A page to view the currently logged in account's information with the ability to update it.                        |
-| /profile/{username}     | A page to view another user's profile, including the groups they are a part of.                                    |
+| /user                   | A page to view the currently logged in account's information with the ability to update it.                        |
+| /user/login             | A form to allow users to log in                                                                                    |
+| /user/{username}        | A page to view another user's profile, including the groups they are a part of.                                    |
 | /admin                  | Accessible only to Super Admins, gives the ability to administer users, including upgrades, etc.                   |
 | /groups                 | A page to view all the groups available                                                                            |
 | /groups/create          | A page to create a new group, which will then be displayed on the /groups route                                    |

@@ -22,9 +22,11 @@ login.post("/api/user/login", (req: Request, res: Response) => {
       user.password === receivedData.password
   );
 
+  // If user does not exist, return 401. Otherwise, return the user data (NOT PASSWORD)
   if (!user) {
     return res.status(401).send({ valid: false });
   } else {
-    return res.send({ valid: true });
+    delete user.password; // Remove the password from the response
+    return res.send(user);
   }
 });
