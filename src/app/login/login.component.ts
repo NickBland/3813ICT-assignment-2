@@ -42,12 +42,13 @@ export class LoginComponent {
           this.router.navigate(["/profile"]);
         },
         error: (error) => {
+          this.error = error;
           // Format the error message in to a user-friendly message
           // Must be wrapped in an if statement to prevent errors if the error object is undefined
           if (this.error) {
             if (error.status === 401) {
               // Get the message from the received API response
-              this.error.message = error.error.message;
+              this.error.message = `${error.status}: ${error.error.message}`;
             } else {
               this.error.message = "An unknown error occurred";
             }
