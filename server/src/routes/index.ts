@@ -1,11 +1,17 @@
 import express, { Router } from "express";
 
-// Import sub-routes here
+///// Import sub-routes here /////
 import { healthcheck } from "./healthcheck";
-import { test } from "./api/test";
+
+// /api/user/
+import { login } from "./api/user/login";
+import { users } from "./api/user/users";
 
 export const routes: Router = express.Router(); // Get the router instance
 
-// Use sub-routes here
+///// Use sub-routes here /////
 routes.use(healthcheck);
-routes.use(test);
+
+// /api/user/
+routes.use(login);
+routes.use(users);
