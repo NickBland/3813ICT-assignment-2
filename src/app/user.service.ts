@@ -1,4 +1,4 @@
-import { computed, Injectable, signal } from "@angular/core";
+import { Injectable, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { User } from "./user";
 import { Observable } from "rxjs";
@@ -10,20 +10,17 @@ export class UserService {
   private apiURL = "http://localhost:8888";
   users$ = signal<User[]>([]);
   user$ = signal<User>({} as User);
-  // Get the loggedIn property from the user object, if it exists, otherwise set it to false
-  loggedIn$ = computed(() => this.user$().loggedIn || false);
+  loggedIn$ = signal<boolean>(false);
+
+  refreshLoginState() {
+    this.loggedIn$.set(!!sessionStorage.getItem("authToken"));
+  }
 
   constructor(private httpClient: HttpClient) {}
 
   // Get all users
   getUsers() {
-    this.httpClient
-      .get<User[]>(`${this.apiURL}/api/user/users`)
-      .subscribe((users) => {
-        this.users$.set(users);
-      });
-
-    return this.users$;
+    return this.httpClient.get<User[]>(`${this.apiURL}/api/user/`);
   }
 
   // Get a user by username
@@ -43,5 +40,6 @@ export class UserService {
   logoutUser() {
     this.user$.set({} as User);
     sessionStorage.removeItem("authToken");
+    this.refreshLoginState();
   }
 }

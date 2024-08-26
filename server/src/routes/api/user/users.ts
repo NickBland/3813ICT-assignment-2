@@ -26,7 +26,7 @@ function verifyToken(req: Request, res: Response, next: () => void) {
 }
 
 // Get all the users (without password) from the users.json file
-users.get("/api/user/users", verifyToken, (_req: Request, res: Response) => {
+users.get("/api/user", verifyToken, (_req: Request, res: Response) => {
   const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
 
   users.forEach((user?: { password?: string }) => {
@@ -37,21 +37,17 @@ users.get("/api/user/users", verifyToken, (_req: Request, res: Response) => {
 });
 
 // Get a single user by username (without password) from the users.json file
-users.get(
-  "/api/user/users/:username",
-  verifyToken,
-  (req: Request, res: Response) => {
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+users.get("/api/user/:username", verifyToken, (req: Request, res: Response) => {
+  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
 
-    const user = users.find(
-      (user: { username: string }) => user.username === req.params.username
-    );
+  const user = users.find(
+    (user: { username: string }) => user.username === req.params.username
+  );
 
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-
-    delete user.password; // Remove the password from the response
-    return res.send(user);
+  if (!user) {
+    return res.status(404).send("User not found");
   }
-);
+
+  delete user.password; // Remove the password from the response
+  return res.send(user);
+});

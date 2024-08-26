@@ -1,4 +1,4 @@
-import { Component, OnInit, Signal } from "@angular/core";
+import { Component, Signal } from "@angular/core";
 import { Router } from "@angular/router";
 import {
   ReactiveFormsModule,
@@ -16,7 +16,7 @@ import { ErrorComponent } from "../error/error.component";
   templateUrl: "./login.component.html",
   styleUrl: "./login.component.scss",
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent {
   loggedIn$ = {} as Signal<boolean>;
   error: Error | null = null;
 
@@ -30,10 +30,6 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  ngOnInit() {
-    this.loggedIn$ = this.userService.loggedIn$;
-  }
-
   submitLogin() {
     this.userService
       .loginUser(this.loginForm.value.username, this.loginForm.value.password)
@@ -42,6 +38,7 @@ export class LoginComponent implements OnInit {
           // Set the user$ signal to the user object returned from the login service, then navigate to the profile page
           this.userService.user$.set(user);
           sessionStorage.setItem("authToken", user.authToken ?? "");
+          this.userService.refreshLoginState();
           this.router.navigate(["/profile"]);
         },
         error: (error) => {
