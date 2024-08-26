@@ -1,1 +1,6 @@
-<p>profile works!</p>
+@if (!loggedIn$()) {
+    <app-error [error]="error"></app-error>
+    <div class="alert alert-light" role="alert">
+        <h1 class="text-center"><a class="nav-link" routerLink="/login">Click here to redirect back to the login page</a></h1>
+    </div>
+} @else {}
