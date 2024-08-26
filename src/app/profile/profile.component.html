@@ -7,6 +7,11 @@
     @if (error) {
         <app-error [error]="error"></app-error>
     }
+    @if (success) {
+        <div class="alert alert-success" role="alert">
+            Your profile has been updated successfully!
+        </div>
+    }
     <div class="container">
         <div class="row">
             <div class="col-md-12">

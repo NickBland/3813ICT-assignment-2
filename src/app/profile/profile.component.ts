@@ -27,6 +27,7 @@ export class ProfileComponent implements OnInit {
   loggedIn$ = {} as Signal<boolean>;
   error: Error | null = null;
   isLoading = true;
+  success = false;
 
   profileUpdateForm: FormGroup;
 
@@ -100,6 +101,11 @@ export class ProfileComponent implements OnInit {
           }
         },
       });
+    // Update Success to be true for 5 seconds
+    this.success = true;
+    setTimeout(() => {
+      this.success = false;
+    }, 5000);
   }
 
   // Determine if the user is logged in and perform actions, otherwise throw an error
