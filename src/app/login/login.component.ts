@@ -41,15 +41,16 @@ export class LoginComponent implements OnInit {
         next: (user) => {
           // Set the user$ signal to the user object returned from the login service, then navigate to the profile page
           this.userService.user$.set(user);
+          sessionStorage.setItem("authToken", user.authToken ?? "");
           this.router.navigate(["/profile"]);
         },
         error: (error) => {
-          this.error = error;
           // Format the error message in to a user-friendly message
           // Must be wrapped in an if statement to prevent errors if the error object is undefined
           if (this.error) {
             if (error.status === 401) {
-              this.error.message = "Invalid username or password";
+              // Get the message from the received API response
+              this.error.message = error.error.message;
             } else {
               this.error.message = "An unknown error occurred";
             }

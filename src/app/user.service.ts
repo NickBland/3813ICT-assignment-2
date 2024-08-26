@@ -42,5 +42,6 @@ export class UserService {
   // Logout a user
   logoutUser() {
     this.user$.set({} as User);
+    sessionStorage.removeItem("authToken");
   }
 }
