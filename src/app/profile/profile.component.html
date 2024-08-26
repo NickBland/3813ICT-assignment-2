@@ -3,4 +3,106 @@
     <div class="alert alert-light" role="alert">
         <h1 class="text-center"><a class="nav-link" routerLink="/login">Click here to redirect back to the login page</a></h1>
     </div>
-} @else {}
+} @else {
+    @if (error) {
+        <app-error [error]="error"></app-error>
+    }
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="text-center">Profile</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        @if (isLoading) {
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        } @else {
+                            <h4 class="card-title">Username: {{ user$().username }}</h4>
+                            <p class="card-text">Email: {{ user$().email }}</p>
+                            <p class="card-text">Full Name: {{ user$().name }}</p>
+                            <p class="card-text">Roles: {{ user$().roles }}</p>
+                            @if (user$().groups.length > 0) {
+                                <div class="card">
+                                    <p class="card-header">Group Memberships:</p>
+                                    <ul class="list-group list-group-flush">
+                                    @for (group of user$().groups; track group) {
+                                        <li class="list-group-item">Group Name: {{ group }}</li>
+                                    }
+                                    </ul>
+                                </div>
+                            } @else {
+                                <p class="card-text">No group memberships</p>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<!-- Create a simple form giving the user the ability to update their profile -->
+<hr>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center">Update Profile</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form [formGroup]="profileUpdateForm" (submit)="updateProfile()">
+                        <div id="formHelpBlock" class="form-text">
+                            All fields are optional. Only fill in the fields you wish to update.
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="username" name="username" formControlName="username" placeholder="userName">
+                            <label for="username">Username</label>
+                            @if (profileUpdateForm.controls['username'].invalid && profileUpdateForm.controls['username'].touched) {
+                                <div class="text-danger">
+                                    Please enter more than 5 characters
+                                </div>
+                            }
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="name" name="name" formControlName="name" placeholder="John Smith">
+                            <label for="name">Full Name</label>
+                            @if (profileUpdateForm.controls['name'].invalid && profileUpdateForm.controls['name'].touched) {
+                                <div class="text-danger">
+                                    Please enter more than 5 characters
+                                </div>
+                            }
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="email" name="email" formControlName="email" placeholder="email@email.com">
+                            <label for="email">Email</label>
+                            @if (profileUpdateForm.controls['email'].invalid && profileUpdateForm.controls['email'].touched) {
+                                <div class="text-danger">
+                                    Please enter a valid email
+                                </div>
+                            }
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="email" name="password" formControlName="password" placeholder="email@email.com">
+                            <label for="password">Password</label>
+                            @if (profileUpdateForm.controls['password'].invalid && profileUpdateForm.controls['password'].touched) {
+                                <div class="text-danger">
+                                    Please enter more than 3 characters
+                                </div>
+                            }
+                        </div>
+                        <button type="submit" class="btn btn-primary" [disabled]="!profileUpdateForm.valid">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

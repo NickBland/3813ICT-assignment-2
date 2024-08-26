@@ -36,6 +36,13 @@ export class UserService {
     });
   }
 
+  updateUser(username: string, user: User): Observable<User> {
+    return this.httpClient.put<User>(
+      `${this.apiURL}/api/user/${username}`,
+      user
+    );
+  }
+
   // Logout a user
   logoutUser() {
     this.user$.set({} as User);
