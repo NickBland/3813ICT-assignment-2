@@ -87,6 +87,12 @@ export class ProfileComponent implements OnInit {
           // Refresh the user object after updating the authToken with the received one
           sessionStorage.setItem("authToken", user.authToken ?? "");
           this.getUser();
+
+          // Update Success to be true for 5 seconds
+          this.success = true;
+          setTimeout(() => {
+            this.success = false;
+          }, 5000);
         },
         error: (error) => {
           this.error = error;
@@ -101,11 +107,6 @@ export class ProfileComponent implements OnInit {
           }
         },
       });
-    // Update Success to be true for 5 seconds
-    this.success = true;
-    setTimeout(() => {
-      this.success = false;
-    }, 5000);
   }
 
   // Determine if the user is logged in and perform actions, otherwise throw an error
