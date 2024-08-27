@@ -1,6 +1,6 @@
 # Chat me Up
 
-[![wakatime](https://wakatime.com/badge/user/1d38e8c4-1b41-48a3-be33-c2f87af55349/project/13079cef-233a-4898-b1d6-1589f9840505.svg?style=flat)](https://wakatime.com/badge/user/1d38e8c4-1b41-48a3-be33-c2f87af55349/project/13079cef-233a-4898-b1d6-1589f9840505)
+[![wakatime](https://wakatime.com/badge/github/NickBland/3813ICT-assignment-1.svg?style=flat)](https://wakatime.com/badge/github/NickBland/3813ICT-assignment-1)
 
 Chat me up is my implementation of the 3813ICT Assignment.
 
