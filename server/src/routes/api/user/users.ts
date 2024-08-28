@@ -186,9 +186,31 @@ users.delete(
     );
     users.splice(index, 1);
 
+    // Remove the user from any groups they were a user or admin of
+    // If there are then no users in a group, the super user will be added
+    const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
+    groups.forEach((group: { users: string[]; admins: string[] }) => {
+      const userIndex = group.users.indexOf(req.params.username);
+      if (userIndex !== -1) {
+        group.users.splice(userIndex, 1);
+        if (group.users.length === 0) {
+          group.users.push("super");
+        }
+      }
+
+      const adminIndex = group.admins.indexOf(req.params.username);
+      if (adminIndex !== -1) {
+        group.admins.splice(adminIndex, 1);
+        if (group.admins.length === 0) {
+          group.admins.push("super");
+        }
+      }
+    });
+
     // Write the updated users array back to the file
     try {
       fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+      fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
     } catch (error) {
       return res.status(500).send({ message: "Error deleting user", error });
     }
@@ -196,5 +218,55 @@ users.delete(
     return res.send({
       message: `User '${req.params.username}' successfully deleted`,
     });
+  }
+);
+
+// Upgrade a user to a group-administrator given the group name and username
+users.put(
+  "/api/user/:username/group/:group",
+  verifyToken,
+  (req: Request, res: Response) => {
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+
+    const user = users.find(
+      (user: { username: string }) => user.username === req.params.username
+    );
+
+    if (!user) {
+      return res.status(404).send({ message: "User not Found" });
+    }
+
+    // Check that the user is trying to update their own profile
+    // Do this by comparing the username in the JWT token with the username on file.
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload; // TS type assertion since decode returns unknown
+
+    // Check that the user attempting to update the user is a superuser
+    if (!decoded?.user.roles?.includes("super")) {
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
+    // Check that the user is not already a group-administrator
+    if (user.roles?.includes("group-admin")) {
+      return res.status(409).send({ message: "User is already a group-admin" });
+    }
+
+    // Add the group-admin role to the user
+    user.roles?.push("group-admin");
+
+    // Overwrite the user object in the users array
+    const index = users.findIndex(
+      (user: { username: string }) => user.username === req.params.username
+    );
+    users[index] = user;
+
+    // Write the updated users array back to the file
+    try {
+      fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+    } catch (error) {
+      return res.status(500).send({ message: "Error updating user", error });
+    }
+
+    return res.status(200).send({ message: "User upgraded to group-admin" });
   }
 );
