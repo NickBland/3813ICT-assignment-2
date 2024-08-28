@@ -2,7 +2,6 @@ import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { BehaviorSubject } from "rxjs";
 import { User } from "./user";
-import { UserService } from "./user.service";
 import { HttpClient } from "@angular/common/http";
 
 @Injectable({
@@ -12,11 +11,7 @@ export class AuthService {
   public isAuthenticated = new BehaviorSubject<boolean>(false);
   private apiURL = "http://localhost:8888";
 
-  constructor(
-    private router: Router,
-    private httpClient: HttpClient,
-    private userService: UserService
-  ) {
+  constructor(private router: Router, private httpClient: HttpClient) {
     this.refreshLoginState();
   }
 
@@ -39,6 +34,7 @@ export class AuthService {
   logoutUser() {
     // Clear the user from the session storage and navigate to the login page
     sessionStorage.removeItem("authToken");
+    sessionStorage.removeItem("username");
     this.refreshLoginState();
     this.router.navigate(["/login"]);
   }
