@@ -10,11 +10,6 @@ export class UserService {
   private apiURL = "http://localhost:8888";
   users$ = signal<User[]>([]);
   user$ = signal<User>({} as User);
-  loggedIn$ = signal<boolean>(false);
-
-  refreshLoginState() {
-    this.loggedIn$.set(!!sessionStorage.getItem("authToken"));
-  }
 
   constructor(private httpClient: HttpClient) {}
 

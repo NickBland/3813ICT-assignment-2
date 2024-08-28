@@ -24,7 +24,6 @@ export class ProfileComponent implements OnInit {
 
   // insantiate the signals, and error code here
   user$ = {} as Signal<User>;
-  loggedIn$ = {} as Signal<boolean>;
   error: Error | null = null;
   isLoading = true;
   success = false;
@@ -36,7 +35,6 @@ export class ProfileComponent implements OnInit {
   constructor(private userService: UserService) {
     // set the signals up by tracking the global signal states
     this.user$ = computed(() => this.userService.user$());
-    this.loggedIn$ = computed(() => this.userService.loggedIn$());
 
     // Initialise the update form
     this.profileUpdateForm = new FormGroup({
@@ -63,8 +61,6 @@ export class ProfileComponent implements OnInit {
   }
 
   updateProfile() {
-    console.log("Updating profile");
-
     // Move the form data into a user object, only updating the fields that have changed (not empty)
     let user = this.user$();
     user = { ...user, ...this.profileUpdateForm.value };
@@ -106,12 +102,6 @@ export class ProfileComponent implements OnInit {
 
   // Determine if the user is logged in and perform actions, otherwise throw an error
   ngOnInit() {
-    this.userService.refreshLoginState();
-    if (!this.loggedIn$()) {
-      this.error = new Error("You must be logged in to view this page!");
-      this.isLoading = false;
-    } else {
-      this.getUser();
-    }
+    this.getUser();
   }
 }

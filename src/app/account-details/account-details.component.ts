@@ -1,4 +1,4 @@
-import { Component, Signal, OnInit, computed } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { User } from "../user";
 import { UserService } from "../user.service";
 import { ErrorComponent } from "../error/error.component";
@@ -15,20 +15,50 @@ export class AccountDetailsComponent implements OnInit {
   // This is pretty much a read-only version of the profile component, allowing the user to see another user's profile
   // There should be a button to go back to the profile page
 
-  // insantiate the signals, and error code here
-  user$ = {} as Signal<User>;
+  // instantiate the vars to use, and error code here
+  user = {} as User;
   username: string | null = null; // The username of the user to view (taken from the URL params)
-  loggedIn$ = {} as Signal<boolean>;
   error: Error | null = null;
   isLoading = true;
 
-  constructor(private userService: UserService, private route: ActivatedRoute) {
-    // set the signals up by tracking the global signal states
-    this.user$ = computed(() => this.userService.user$());
-    this.loggedIn$ = computed(() => this.userService.loggedIn$());
+  constructor(
+    private userService: UserService,
+    private route: ActivatedRoute
+  ) {}
+
+  getUser() {
+    // Get the user's profile
+    if (this.username) {
+      this.userService.getUser(this.username).subscribe({
+        next: (value) => {
+          // Set the user object to the received user
+          this.user = value;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          this.error = error;
+          this.isLoading = false;
+          if (this.error) {
+            if (error.status === 401) {
+              // Get the message from the received API response
+              this.error.message = `${error.status}: ${error.error.message}`;
+            } else {
+              this.error.message = "An unknown error occurred";
+            }
+          }
+        },
+      });
+    } else {
+      this.error = new Error("No username provided");
+      this.isLoading = false;
+    }
   }
 
-  ngOnInit(): void {
-    return;
+  ngOnInit() {
+    // Get the information of the user to view from the URL params
+    this.username = this.route.snapshot.paramMap.get("username");
+
+    // Get the user's profile
+    this.getUser();
   }
 }

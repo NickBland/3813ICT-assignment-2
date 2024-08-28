@@ -1,57 +1,50 @@
-@if (!loggedIn$()) {
+@if (error) {
     <app-error [error]="error"></app-error>
-    <div class="alert alert-light" role="alert">
-        <h1 class="text-center"><a class="nav-link" routerLink="/login">Click here to redirect back to the login page</a></h1>
+}
+@if (success) {
+    <div class="alert alert-success" role="alert">
+        Your profile has been updated successfully!
     </div>
-} @else {
-    @if (error) {
-        <app-error [error]="error"></app-error>
-    }
-    @if (success) {
-        <div class="alert alert-success" role="alert">
-            Your profile has been updated successfully!
+}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center">Profile</h1>
         </div>
-    }
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <h1 class="text-center">Profile</h1>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-body">
-                        @if (isLoading) {
-                            <div class="d-flex justify-content-center">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (isLoading) {
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    } @else {
+                        <h4 class="card-title">Username: {{ user$().username }}</h4>
+                        <p class="card-text">Email: {{ user$().email }}</p>
+                        <p class="card-text">Full Name: {{ user$().name }}</p>
+                        <p class="card-text">Roles: {{ user$().roles }}</p>
+                        @if (user$().groups.length > 0) {
+                            <div class="card">
+                                <p class="card-header">Group Memberships:</p>
+                                <ul class="list-group list-group-flush">
+                                @for (group of user$().groups; track group) {
+                                    <li class="list-group-item">Group Name: {{ group }}</li>
+                                }
+                                </ul>
                             </div>
                         } @else {
-                            <h4 class="card-title">Username: {{ user$().username }}</h4>
-                            <p class="card-text">Email: {{ user$().email }}</p>
-                            <p class="card-text">Full Name: {{ user$().name }}</p>
-                            <p class="card-text">Roles: {{ user$().roles }}</p>
-                            @if (user$().groups.length > 0) {
-                                <div class="card">
-                                    <p class="card-header">Group Memberships:</p>
-                                    <ul class="list-group list-group-flush">
-                                    @for (group of user$().groups; track group) {
-                                        <li class="list-group-item">Group Name: {{ group }}</li>
-                                    }
-                                    </ul>
-                                </div>
-                            } @else {
-                                <p class="card-text">No group memberships</p>
-                            }
+                            <p class="card-text">No group memberships</p>
                         }
-                    </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
-}
+</div>
 <!-- Create a simple form giving the user the ability to update their profile -->
 <hr>
 <div class="container">
