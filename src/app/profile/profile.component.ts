@@ -1,4 +1,4 @@
-import { Component, Signal, OnInit, effect } from "@angular/core";
+import { Component, Signal, OnInit, computed } from "@angular/core";
 import { User } from "../user";
 import { UserService } from "../user.service";
 import { ErrorComponent } from "../error/error.component";
@@ -29,12 +29,14 @@ export class ProfileComponent implements OnInit {
   isLoading = true;
   success = false;
 
+  username: string | null = null;
+
   profileUpdateForm: FormGroup;
 
   constructor(private userService: UserService) {
-    // set the signals up
-    this.user$ = this.userService.user$;
-    this.loggedIn$ = this.userService.loggedIn$;
+    // set the signals up by tracking the global signal states
+    this.user$ = computed(() => this.userService.user$());
+    this.loggedIn$ = computed(() => this.userService.loggedIn$());
 
     // Initialise the update form
     this.profileUpdateForm = new FormGroup({
@@ -42,10 +44,6 @@ export class ProfileComponent implements OnInit {
       name: new FormControl("", [Validators.minLength(5)]),
       email: new FormControl("", [Validators.minLength(5), Validators.email]),
       password: new FormControl("", [Validators.minLength(3)]),
-    });
-
-    effect(() => {
-      this.user$ = this.userService.user$;
     });
   }
 
@@ -59,54 +57,51 @@ export class ProfileComponent implements OnInit {
     }
     const userAuth = JSON.parse(token as string).user;
 
-    // Set the user object to the userAuth object
+    // Set the global user signal to the userAuth object
     this.userService.user$.set(userAuth);
     this.isLoading = false;
-    this.user$ = this.userService.user$;
   }
 
   updateProfile() {
     console.log("Updating profile");
 
     // Move the form data into a user object, only updating the fields that have changed (not empty)
-    let user = this.userService.user$();
+    let user = this.user$();
     user = { ...user, ...this.profileUpdateForm.value };
 
     console.log(user);
 
-    this.userService
-      .updateUser(this.userService.user$().username, user)
-      .subscribe({
-        next: (user) => {
-          this.userService.user$.set(user);
-          this.isLoading = false;
+    this.userService.updateUser(this.user$().username, user).subscribe({
+      next: (user) => {
+        this.userService.user$.set(user);
+        this.isLoading = false;
 
-          // Clear the form
-          this.profileUpdateForm.reset();
+        // Clear the form
+        this.profileUpdateForm.reset();
 
-          // Refresh the user object after updating the authToken with the received one
-          sessionStorage.setItem("authToken", user.authToken ?? "");
-          this.getUser();
+        // Refresh the user object after updating the authToken with the received one
+        sessionStorage.setItem("authToken", user.authToken ?? "");
+        this.getUser();
 
-          // Update Success to be true for 5 seconds
-          this.success = true;
-          setTimeout(() => {
-            this.success = false;
-          }, 5000);
-        },
-        error: (error) => {
-          this.error = error;
-          this.isLoading = false;
-          if (this.error) {
-            if (error.status === 401) {
-              // Get the message from the received API response
-              this.error.message = `${error.status}: ${error.error.message}`;
-            } else {
-              this.error.message = "An unknown error occurred";
-            }
+        // Update Success to be true for 5 seconds
+        this.success = true;
+        setTimeout(() => {
+          this.success = false;
+        }, 5000);
+      },
+      error: (error) => {
+        this.error = error;
+        this.isLoading = false;
+        if (this.error) {
+          if (error.status === 401) {
+            // Get the message from the received API response
+            this.error.message = `${error.status}: ${error.error.message}`;
+          } else {
+            this.error.message = "An unknown error occurred";
           }
-        },
-      });
+        }
+      },
+    });
   }
 
   // Determine if the user is logged in and perform actions, otherwise throw an error

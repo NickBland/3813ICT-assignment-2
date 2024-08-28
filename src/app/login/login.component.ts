@@ -8,6 +8,7 @@ import {
 } from "@angular/forms";
 import { UserService } from "../user.service";
 import { ErrorComponent } from "../error/error.component";
+import { AuthService } from "../auth.service";
 
 @Component({
   selector: "app-login",
@@ -22,7 +23,11 @@ export class LoginComponent {
 
   loginForm: FormGroup;
 
-  constructor(private userService: UserService, private router: Router) {
+  constructor(
+    private userService: UserService,
+    private router: Router,
+    private authService: AuthService
+  ) {
     // Initialise the login form, with two form controls: username and password
     this.loginForm = new FormGroup({
       username: new FormControl("", [Validators.required]),
@@ -31,20 +36,19 @@ export class LoginComponent {
   }
 
   submitLogin() {
-    this.userService
+    // Login the user
+    // Check if the function returns an error and format, otherwise pass
+    this.authService
       .loginUser(this.loginForm.value.username, this.loginForm.value.password)
       .subscribe({
         next: (user) => {
-          // Set the user$ signal to the user object returned from the login service, then navigate to the profile page
-          this.userService.user$.set(user);
           sessionStorage.setItem("authToken", user.authToken ?? "");
-          this.userService.refreshLoginState();
+          this.userService.user$.set(user); // Set the global user signal to the user object returned from the request
+          this.authService.refreshLoginState();
           this.router.navigate(["/profile"]);
         },
         error: (error) => {
           this.error = error;
-          // Format the error message in to a user-friendly message
-          // Must be wrapped in an if statement to prevent errors if the error object is undefined
           if (this.error) {
             if (error.status === 401) {
               // Get the message from the received API response

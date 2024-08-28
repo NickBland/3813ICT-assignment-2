@@ -1,6 +1,6 @@
-import { Component, Signal } from "@angular/core";
+import { Component } from "@angular/core";
 import { RouterModule, Router } from "@angular/router";
-import { UserService } from "../user.service";
+import { AuthService } from "../auth.service";
 
 @Component({
   selector: "app-navbar",
@@ -10,14 +10,17 @@ import { UserService } from "../user.service";
   styleUrl: "./navbar.component.scss",
 })
 export class NavbarComponent {
-  loggedIn$ = {} as Signal<boolean>;
+  loggedIn = false;
 
-  constructor(private userService: UserService, private router: Router) {
-    this.loggedIn$ = this.userService.loggedIn$;
+  constructor(private authService: AuthService, private router: Router) {
+    // Refresh the loggedIn variable
+    this.authService.isAuthenticated.subscribe((value) => {
+      this.loggedIn = value;
+    });
   }
 
   logout() {
-    this.userService.logoutUser();
-    this.router.navigate(["/login"]);
+    this.authService.logoutUser();
+    this.loggedIn = false;
   }
 }

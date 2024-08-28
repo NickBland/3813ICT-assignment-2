@@ -28,25 +28,10 @@ export class UserService {
     return this.httpClient.get<User>(`${this.apiURL}/api/user/${username}`);
   }
 
-  // Login a user
-  loginUser(username: string, password: string): Observable<User> {
-    return this.httpClient.post<User>(`${this.apiURL}/api/user/login`, {
-      username,
-      password,
-    });
-  }
-
   updateUser(username: string, user: User): Observable<User> {
     return this.httpClient.put<User>(
       `${this.apiURL}/api/user/${username}`,
       user
     );
-  }
-
-  // Logout a user
-  logoutUser() {
-    this.user$.set({} as User);
-    sessionStorage.removeItem("authToken");
-    this.refreshLoginState();
   }
 }
