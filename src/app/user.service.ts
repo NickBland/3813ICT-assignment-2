@@ -29,4 +29,8 @@ export class UserService {
       user
     );
   }
+
+  deleteUser(username: string): Observable<User> {
+    return this.httpClient.delete<User>(`${this.apiURL}/api/user/${username}`);
+  }
 }

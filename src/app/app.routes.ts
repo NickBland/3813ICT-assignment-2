@@ -8,11 +8,12 @@ import { UserListComponent } from "./user-list/user-list.component";
 export const routes: Routes = [
   { path: "login", component: LoginComponent },
   { path: "profile", component: ProfileComponent, canActivate: [authGuard] },
-  { path: "users", component: UserListComponent },
+  { path: "users", component: UserListComponent, canActivate: [authGuard] },
   {
     path: "profile/:username",
     component: AccountDetailsComponent,
     canActivate: [authGuard],
   },
+  // { path: "groups", component: GroupsListComponent, canActivate: [authGuard] },
   { path: "**", redirectTo: "/login" }, // Redirect to the login page if an invalid path is provided
 ];

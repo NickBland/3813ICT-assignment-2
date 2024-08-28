@@ -100,6 +100,30 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  deleteUser() {
+    // Delete the user from the database
+    this.userService.deleteUser(this.user$().username).subscribe({
+      next: (response) => {
+        // Clear the user from the session storage
+        sessionStorage.clear();
+        // Redirect the user to the login page
+        window.location.href = "/login";
+      },
+      error: (error) => {
+        this.error = error;
+        this.isLoading = false;
+        if (this.error) {
+          if (error.status === 401) {
+            // Get the message from the received API response
+            this.error.message = `${error.status}: ${error.error.message}`;
+          } else {
+            this.error.message = "An unknown error occurred";
+          }
+        }
+      },
+    });
+  }
+
   // Determine if the user is logged in and perform actions, otherwise throw an error
   ngOnInit() {
     this.getUser();
