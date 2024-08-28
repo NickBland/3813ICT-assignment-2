@@ -4,7 +4,9 @@
     "name": "Super Admin",
     "email": "super@super.com",
     "password": "123",
-    "roles": ["super"],
+    "roles": [
+      "super"
+    ],
     "groups": []
   }
 ]

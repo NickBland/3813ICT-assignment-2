@@ -35,6 +35,39 @@ users.get("/api/user", verifyToken, (_req: Request, res: Response) => {
   return res.send(users);
 });
 
+// Create a new user
+users.post("/api/user", (req: Request, res: Response) => {
+  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+
+  // Check that the username and email are unique
+  if (
+    users.find(
+      (user: { username: string }) => user.username === req.body.username
+    )
+  ) {
+    return res.status(409).send({ message: "Username already exists" });
+  }
+
+  if (users.find((user: { email: string }) => user.email === req.body.email)) {
+    return res.status(409).send({ message: "Email already exists" });
+  }
+
+  // Add the new user to the users array
+  users.push(req.body);
+
+  // Write the updated users array back to the file
+  try {
+    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+  } catch (error) {
+    return res.status(500).send({ message: "Error creating user", error });
+  }
+
+  // Remove the password property from the response
+  delete req.body.password;
+  req.body.authToken = jwt.sign({ user: req.body }, secret); // Create a JWT token for the user using the updated data
+  return res.send(req.body);
+});
+
 // Get a single user by username (without password) from the users.json file
 users.get("/api/user/:username", verifyToken, (req: Request, res: Response) => {
   const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
@@ -118,3 +151,50 @@ users.put("/api/user/:username", verifyToken, (req: Request, res: Response) => {
   user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
   return res.send(user);
 });
+
+// Delete a user by username
+users.delete(
+  "/api/user/:username",
+  verifyToken,
+  (req: Request, res: Response) => {
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+
+    const user = users.find(
+      (user: { username: string }) => user.username === req.params.username
+    );
+
+    if (!user) {
+      return res.status(404).send({ message: "User not Found" });
+    }
+
+    // Check that the user is trying to delete their own profile, unless they are a superuser who can delete any profile
+    // Do this by comparing the username in the JWT token with the username on file.
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload; // TS type assertion since decode returns unknown
+
+    // Perform the checks
+    if (
+      decoded?.user.username !== req.params.username &&
+      !decoded?.user.roles?.includes("super")
+    ) {
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
+    // Remove the user object from the users array
+    const index = users.findIndex(
+      (user: { username: string }) => user.username === req.params.username
+    );
+    users.splice(index, 1);
+
+    // Write the updated users array back to the file
+    try {
+      fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+    } catch (error) {
+      return res.status(500).send({ message: "Error deleting user", error });
+    }
+
+    return res.send({
+      message: `User '${req.params.username}' successfully deleted`,
+    });
+  }
+);
