@@ -1,0 +1,58 @@
+@if (error) {
+    <app-error [error]="error"></app-error>
+}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center">Users</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (isLoading) {
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    } @else {
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Username</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Full Name</th>
+                                    <th scope="col">Roles</th>
+                                    <th scope="col">Group Memberships</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (user of users; track user) {
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>{{ user.name }}</td>
+                                        <td>{{ user.roles }}</td>
+                                        <td>
+                                            @if (user.groups.length > 0) {
+                                                <ul>
+                                                @for (group of user.groups; track group) {
+                                                    <li>{{ group }}</li>
+                                                }
+                                                </ul>
+                                            } @else {
+                                                No group memberships
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
