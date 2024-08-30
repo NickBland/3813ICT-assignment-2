@@ -2,9 +2,10 @@
   {
     "id": 1,
     "name": "Group 1 - Default",
-    "description": "Description 1",
+    "description": "Description 1 - Updated!",
     "users": [
-      "super"
+      "super",
+      "joe"
     ],
     "admins": [
       "super"

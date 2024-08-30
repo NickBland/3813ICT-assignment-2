@@ -8,5 +8,13 @@
       "super"
     ],
     "groups": []
+  },
+  {
+    "username": "joe",
+    "name": "Regular Joe",
+    "email": "joe@joe,com",
+    "password": "12345",
+    "roles": [],
+    "groups": []
   }
 ]

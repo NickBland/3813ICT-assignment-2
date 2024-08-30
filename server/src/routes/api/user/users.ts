@@ -77,7 +77,7 @@ users.get("/api/user/:username", verifyToken, (req: Request, res: Response) => {
   );
 
   if (!user) {
-    return res.status(404).send("User not found");
+    return res.status(404).send({ message: "User not Found" });
   }
 
   delete user.password; // Remove the password from the response
@@ -247,12 +247,12 @@ users.put(
     }
 
     // Check that the user is not already a group-administrator
-    if (user.roles?.includes("group-admin")) {
+    if (user.roles?.includes(req.params.group + "-admin")) {
       return res.status(409).send({ message: "User is already a group-admin" });
     }
 
     // Add the group-admin role to the user
-    user.roles?.push("group-admin");
+    user.roles?.push(req.params.group + "-admin");
 
     // Overwrite the user object in the users array
     const index = users.findIndex(
