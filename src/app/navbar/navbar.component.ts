@@ -11,19 +11,21 @@ import { AuthService } from "../auth.service";
 })
 export class NavbarComponent {
   loggedIn = false;
-  username: string | null = null;
+  username = "";
 
   constructor(private authService: AuthService) {
     // Refresh the loggedIn variable
     this.authService.isAuthenticated.subscribe((value) => {
       this.loggedIn = value;
-      this.username = ` | ${sessionStorage.getItem("username")}`; // This WILL be here if the user is logged in
+      if (value) {
+        this.username = ` | ${sessionStorage.getItem("username")}`; // This WILL be here if the user is logged in
+      }
     });
   }
 
   logout() {
     this.authService.logoutUser();
     this.loggedIn = false;
-    this.username = null;
+    this.username = "";
   }
 }
