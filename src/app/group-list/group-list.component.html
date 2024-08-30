@@ -1,0 +1,63 @@
+@if (error) {
+    <app-error [error]="error"></app-error>
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center">Groups</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (isLoading) {
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    } @else {
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Group Name</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col"># Members</th>
+                                    <th scope="col">Admins</th>
+                                    <th scope="col" class="button-column"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (group of groups; track group) {
+                                    <tr>
+                                        <td>{{ group.id }}</td>
+                                        <td>{{ group.name }}</td>
+                                        <td>{{ group.description }}</td>
+                                        <td>{{ group.users.length }}</td>
+                                        <td>
+                                            @if (group.admins.length > 0) {
+                                                <ul class="list-group list-group-flush">
+                                                @for (admin of group.admins; track admin) {
+                                                    <li class="list-group-item">{{ admin }}</li>
+                                                }
+                                                </ul>
+                                            } @else {
+                                                No admins
+                                            }
+                                        </td>
+                                        <td class="button-column">
+                                            <a [routerLink]="['/group/', group.id]" class="btn btn-primary">View</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
