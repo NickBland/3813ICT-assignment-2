@@ -26,6 +26,7 @@
                                     <th scope="col">Full Name</th>
                                     <th scope="col">Roles</th>
                                     <th scope="col">Group Memberships</th>
+                                    <th scope="col" class="button-column"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -37,14 +38,17 @@
                                         <td>{{ user.roles }}</td>
                                         <td>
                                             @if (user.groups.length > 0) {
-                                                <ul>
+                                                <ul class="list-group list-group-flush">
                                                 @for (group of user.groups; track group) {
-                                                    <li>{{ group }}</li>
+                                                    <li class="list-group-item">{{ group }}</li>
                                                 }
                                                 </ul>
                                             } @else {
                                                 No group memberships
                                             }
+                                        </td>
+                                        <td class="button-column">
+                                            <a [routerLink]="['/profile/', user.username]" class="btn btn-primary">View Profile</a>
                                         </td>
                                     </tr>
                                 }
