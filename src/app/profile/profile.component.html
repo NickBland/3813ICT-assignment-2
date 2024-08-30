@@ -97,9 +97,35 @@
                                 </div>
                             }
                         </div>
-                        <button type="submit" class="btn btn-primary" [disabled]="!profileUpdateForm.valid">Update Profile</button>
+                        <!-- Add in both the submit button on the left, and a delete button on the right -->
+                         <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-primary" [disabled]="!profileUpdateForm.valid">Update Profile</button>
+                            </div>
+                            <div class="col-6 text-end">
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmationModal">Delete Profile</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmationModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="confirmationModalLabel">Are you sure you want to delete your account?</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                This action is irreversible. You will be logged out and your account will be deleted.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" (click)="deleteUser()">Confirm</button>
             </div>
         </div>
     </div>

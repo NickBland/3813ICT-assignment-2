@@ -14,11 +14,12 @@ export class NavbarComponent {
   username = "";
 
   constructor(private authService: AuthService) {
-    // Refresh the loggedIn variable
     this.authService.isAuthenticated.subscribe((value) => {
       this.loggedIn = value;
       if (value) {
         this.username = ` | ${sessionStorage.getItem("username")}`; // This WILL be here if the user is logged in
+      } else {
+        this.username = "";
       }
     });
   }

@@ -18,6 +18,8 @@ export class AuthService {
   refreshLoginState() {
     if (sessionStorage.getItem("authToken")) {
       this.isAuthenticated.next(true);
+    } else {
+      this.isAuthenticated.next(false);
     }
   }
 

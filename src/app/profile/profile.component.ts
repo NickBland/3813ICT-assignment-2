@@ -1,6 +1,7 @@
 import { Component, Signal, OnInit, computed } from "@angular/core";
 import { User } from "../user";
 import { UserService } from "../user.service";
+import { AuthService } from "../auth.service";
 import { ErrorComponent } from "../error/error.component";
 import { RouterModule } from "@angular/router";
 import {
@@ -22,7 +23,7 @@ export class ProfileComponent implements OnInit {
   // There should also be a pop up form to edit the user's profile
   // This form should have a cancel button and a save button
 
-  // insantiate the signals, and error code here
+  // instantiate the signals, and error code here
   user$ = {} as Signal<User>;
   error: Error | null = null;
   isLoading = true;
@@ -32,7 +33,10 @@ export class ProfileComponent implements OnInit {
 
   profileUpdateForm: FormGroup;
 
-  constructor(private userService: UserService) {
+  constructor(
+    private userService: UserService,
+    private authService: AuthService
+  ) {
     // set the signals up by tracking the global signal states
     this.user$ = computed(() => this.userService.user$());
 
@@ -104,10 +108,9 @@ export class ProfileComponent implements OnInit {
     // Delete the user from the database
     this.userService.deleteUser(this.user$().username).subscribe({
       next: (response) => {
-        // Clear the user from the session storage
-        sessionStorage.clear();
-        // Redirect the user to the login page
-        window.location.href = "/login";
+        console.log(response);
+        // Log the user out, thereby removing the session storage
+        this.authService.logoutUser();
       },
       error: (error) => {
         this.error = error;
