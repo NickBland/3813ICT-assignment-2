@@ -1,7 +1,7 @@
 import { Injectable, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Group } from "./group";
-import { Observable } from "rxjs";
+import { firstValueFrom, Observable } from "rxjs";
 
 @Injectable({
   providedIn: "root",
@@ -52,5 +52,51 @@ export class GroupService {
       `${this.apiURL}/api/group/${groupId}/remove_user/${username}`,
       {}
     );
+  }
+
+  // Group Name -> ID
+  async getGroupIdFromName(groupName = "", groupNames: string[] = []) {
+    const groups = await firstValueFrom(this.getGroups());
+
+    // Check if the groupNames array is NOT empty
+    if (groupNames.length > 0) {
+      const groupIds: number[] = [];
+      for (const group of groups) {
+        if (groupNames.includes(group.name)) {
+          groupIds.push(group.id);
+        }
+      }
+      return groupIds;
+    } else {
+      for (const group of groups) {
+        if (group.name === groupName) {
+          return group.id;
+        }
+      }
+    }
+    return 0;
+  }
+
+  // Group ID -> Name
+  async getGroupNameFromId(groupId = 0, groupIDs: number[] = []) {
+    const groups = await firstValueFrom(this.getGroups());
+
+    // Check if the groupIDs array is NOT empty
+    if (groupIDs.length > 0) {
+      const groupNames: string[] = [];
+      for (const group of groups) {
+        if (group.id === groupId) {
+          groupNames.push(group.name);
+        }
+      }
+      return groupNames;
+    } else {
+      for (const group of groups) {
+        if (group.id === groupId) {
+          return group.name;
+        }
+      }
+    }
+    return "";
   }
 }

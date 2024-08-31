@@ -49,7 +49,11 @@
                                             }
                                         </td>
                                         <td class="button-column">
-                                            <a [routerLink]="['/group/', group.id]" class="btn btn-primary">View</a>
+                                            @if (availableGroups[$index]) {
+                                                <a [routerLink]="['/group/', group.id]" class="btn btn-primary">View</a>
+                                            } @else {
+                                                <a [routerLink]="['/group/', group.id]" class="btn btn-primary disabled">View</a>
+                                            }
                                         </td>
                                     </tr>
                                 }

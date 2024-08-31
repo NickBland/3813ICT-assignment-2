@@ -1,0 +1,70 @@
+@if (error) {
+    <app-error [error]="error"></app-error>
+}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            @if (isLoading) {
+                <h1 class="text-center">Group</h1>
+            } @else {
+                <h1 class="text-center">{{ group.name }}</h1>
+            }
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (isLoading) {
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    } @else {
+                        <h4 class="card-title">Name: {{ group.name }}</h4>
+                        <p class="card-text">Description: {{ group.description }}</p>
+                        <p class="card-text">ID: {{ group.id }}</p>
+                        @if (group.users.length > 0) {
+                            <div class="card">
+                                <p class="card-header">Members:</p>
+                                <ul class="list-group list-group-flush">
+                                @for (user of group.users; track user) {
+                                    <!-- Display the name, and then a button to visit the profile -->
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ user }} @if (group.admins.includes(user)) { [Group Admin] }</span>
+                                            <a [routerLink]="['/account/', user]" class="btn btn-primary">View Profile</a>
+                                        </div>      
+                                    </li>
+                                }
+                                </ul>
+                            </div>
+                        } @else {
+                            <p class="card-text">No group members</p>
+                        }
+                        <hr>
+                        
+                        @if (group.channels.length > 0) {
+                            <div class="card">
+                                <p class="card-header">Channels:</p>
+                                <ul class="list-group list-group-flush">
+                                @for (channel of group.channels; track channel) {
+                                    <li class="list-group-item">Channel Name: {{ channel }}</li>
+                                }
+                                </ul>
+                            </div>
+                        } @else {
+                            <div class="card">
+                                <p class="card-header">Channels:</p>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">No channels</li>
+                                </ul>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
