@@ -50,7 +50,12 @@
                                 <p class="card-header">Channels:</p>
                                 <ul class="list-group list-group-flush">
                                 @for (channel of group.channels; track channel) {
-                                    <li class="list-group-item">Channel Name: {{ channel }}</li>
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ channelNames[$index] }} | <span class="font-monospace">channel#{{channel}}</span></span>
+                                            <a [routerLink]="['/channel/', channel]" class="btn btn-success">Chat</a>
+                                        </div>
+                                    </li>
                                 }
                                 </ul>
                             </div>

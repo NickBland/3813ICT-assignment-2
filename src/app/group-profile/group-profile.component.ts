@@ -1,5 +1,6 @@
 import { Component, OnInit } from "@angular/core";
 import { GroupService } from "../group.service";
+import { ChannelService } from "../channel.service";
 import { ActivatedRoute, RouterModule } from "@angular/router";
 import { Group } from "../group";
 import { ErrorComponent } from "../error/error.component";
@@ -15,13 +16,29 @@ export class GroupProfileComponent implements OnInit {
   // instantiate the vars to use, and error code here
   group = {} as Group;
   groupId: number | null = null; // The group of the group to view (taken from the URL params)
+  channelNames: string[] = [];
   error: Error | null = null;
   isLoading = true;
 
   constructor(
     private groupService: GroupService,
+    private channelService: ChannelService,
     private route: ActivatedRoute
   ) {}
+
+  async getChannelNames() {
+    // Get a list of all channels for the group
+    const channels = this.channelService.getChannelNameFromId(
+      0,
+      this.group.channels
+    );
+
+    await Promise.all([channels]).then((values) => {
+      this.channelNames = values[0] as string[];
+    });
+
+    return this.channelNames;
+  }
 
   getGroup() {
     // Get the user's profile
@@ -30,6 +47,7 @@ export class GroupProfileComponent implements OnInit {
         next: (value) => {
           // Set the user object to the received user
           this.group = value;
+          this.getChannelNames();
           this.isLoading = false;
         },
         error: (error) => {

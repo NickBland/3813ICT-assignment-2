@@ -35,7 +35,9 @@ export class GroupListComponent implements OnInit {
     const roleIDs = this.groupService.getGroupIdFromName("", userGroups);
 
     // Check if the user is a member of the group
-    const resolvedRoleIDs = await Promise.all([roleIDs]);
+    const resolvedRoleIDs = await Promise.all([roleIDs]).then((values) => {
+      return values; // Return the resolved role IDs
+    });
 
     // Now adjust the size of the availableGroups array to match the size of the groups array
     this.availableGroups = new Array(this.groups.length).fill(false);
