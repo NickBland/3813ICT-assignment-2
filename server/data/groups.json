@@ -10,7 +10,12 @@
     "admins": [
       "super"
     ],
-    "channels": []
+    "channels": [
+      1,
+      2,
+      5,
+      6
+    ]
   },
   {
     "id": 2,
@@ -22,7 +27,9 @@
     "admins": [
       "super"
     ],
-    "channels": []
+    "channels": [
+      3
+    ]
   },
   {
     "id": 3,
@@ -34,6 +41,8 @@
     "admins": [
       "super"
     ],
-    "channels": []
+    "channels": [
+      4
+    ]
   }
 ]

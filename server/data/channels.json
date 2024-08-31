@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "name": "General",
+    "description": "General discussion",
+    "group": 1,
+    "messages": [
+      {
+        "id": 1,
+        "author": "John Doe",
+        "content": "Hello, world!",
+        "timestamp": "2020-01-01T12:00:00"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Random",
+    "description": "Random discussion",
+    "group": 1,
+    "messages": []
+  },
+  {
+    "id": 3,
+    "name": "Secret",
+    "description": "Secret discussion",
+    "group": 2,
+    "messages": []
+  },
+  {
+    "id": 4,
+    "name": "General 2",
+    "description": "General discussion",
+    "group": 3,
+    "messages": []
+  },
+  {
+    "id": 5,
+    "name": "Awesome Chat!",
+    "description": "some description!",
+    "group": 1,
+    "messages": []
+  },
+  {
+    "id": 6,
+    "name": "Awesome Chat 2! - UPDATED",
+    "description": "some description!",
+    "group": 1,
+    "messages": []
+  }
+]

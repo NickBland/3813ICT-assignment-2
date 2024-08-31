@@ -32,7 +32,7 @@ groups.get("/api/group", verifyToken, (_req: Request, res: Response) => {
 });
 
 // Create a new group
-groups.post("/api/group", (req: Request, res: Response) => {
+groups.post("/api/group", verifyToken, (req: Request, res: Response) => {
   const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
 
   // Check that the group name is unique
