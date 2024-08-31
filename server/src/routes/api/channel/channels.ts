@@ -25,24 +25,34 @@ function verifyToken(req: Request, res: Response, next: () => void) {
 }
 
 // Get all channel IDs for a given group
+// Or get all channels if the group ID is 0
 channels.get(
   "/api/channels/:group",
   verifyToken,
   (req: Request, res: Response) => {
-    const selectedGroup = req.params.group;
+    const selectedGroup = Number(req.params.group);
 
     const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
 
+    // Return all channels if the group ID is 0
+    if (selectedGroup === 0) {
+      const channels = JSON.parse(
+        fs.readFileSync("./data/channels.json", "utf-8")
+      );
+      console.log(channels);
+      return res.send(channels);
+    }
+
     // Check if the group exists
-    const group = groups.find((group: { name: string }) => {
-      return group.name === selectedGroup;
+    const group = groups.find((group: { id: number }) => {
+      return group.id === selectedGroup;
     });
 
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
     }
 
-    res.send(group.channels);
+    return res.send(group.channels);
   }
 );
 
@@ -66,7 +76,7 @@ channels.get(
       return res.status(404).send({ message: "Channel not found" });
     }
 
-    res.send(channel);
+    return res.send(channel);
   }
 );
 
