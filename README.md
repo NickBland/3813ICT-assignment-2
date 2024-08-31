@@ -81,15 +81,19 @@ Using the Angular framework provides ample opportunity to lay out the applicatio
 
 ### 4.1 - Components
 
-Components should be made for most of the objects that will be displayed on screen. This includes components for forms, profiles, each channel, each group.
+Components should be made for most of the objects that will be displayed on screen. This includes components for forms, profiles, each channel, each group. Each route on the front end corresponds to a component in Angular. In addition to that, some more components will need to be made for other areas of the frontend that require data or state management. The navbar is the most prime example of this, updating to reflect routes an individual user as buttons despite not being accessible in an individual route (it will be present on every page at the top).
 
 ### 4.2 - Services
 
-Where data is being fetched or saved from the API, a service will need to be used. While components are used to render the data, keeping fetching and saving away from the rendering process allows for more re-usability within the codebase.
+Where data is being fetched or saved from the API, a service will need to be used. While components are used to render the data, keeping fetching and saving away from the rendering process allows for more re-usability within the codebase. This also allows components to be smaller in size and focus solely on rendering the information from these services on screen.
+
+Services will be created for users, groups, and channels. In addition, an auth service will need to be made to handle authentication between the various pages.
 
 ### 4.3 - Models
 
 The objects I mentioned earlier in [Section 3.1](#31---in-general) should be stored as Models within Angular. These can easily be imported when needed through the project and serve as a centralised way to house the data structure. This also allows for ample documentation to be added during the creation of them, making for easier development.
+
+There will be models for the different data structures to be used: including users, groups, and channels. In the future, a message model will need to be created
 
 ### 4.4 - Routes
 
@@ -98,9 +102,10 @@ These are the routes I plan to implement. While this isn't concrete and could ch
 | Route                   | Description                                                                                                        |
 |-------------------------|--------------------------------------------------------------------------------------------------------------------|
 | /                       | Should show a simple design on what the application is                                                             |
-| /profile                | A page to view the currently logged in account's information with the ability to update it.                        |
 | /login                  | A form to allow users to log in                                                                                    |
-| /user/{username}        | A page to view another user's profile, including the groups they are a part of.                                    |
+| /users                  | A page to view all the user's registered to the application.                                                       |
+| /profile                | A page to view the currently logged in account's information with the ability to update it.                        |
+| /profile/{username}     | A page to view another user's profile, including the groups they are a part of.                                    |
 | /admin                  | Accessible only to Super Admins, gives the ability to administer users, including upgrades, etc.                   |
 | /groups                 | A page to view all the groups available                                                                            |
 | /groups/create          | A page to create a new group, which will then be displayed on the /groups route                                    |
@@ -112,7 +117,7 @@ These are the routes I plan to implement. While this isn't concrete and could ch
 
 ## 5.0 - Node Server Architecture
 
-The Node server of my implementation will account for server-side processing of data, and as an API for interactions between the front-end and the database.
+The Node server of my implementation will account for server-side processing of data, and as an API for interactions between the front-end and the database. The API serves as a means to interact with the database, or files in this case, without directly accessing it.
 
 ### 5.1 - Modules
 
@@ -120,11 +125,23 @@ The most important module of this section is [Express](https://expressjs.com/), 
 
 While I haven't set settled on it, my current plan is to use SwaggerUI as a way to expose the API, which is helpful for the [Server-Side Routes](#60---server-side-routes) section of this document. This also allows for a more clear way to see the API than it would be trawling through different files trying to find what each route accepts/does.
 
+For authentication, JWT will be used. JWT is the standard for authentication and authorisation in APIs, allowing for a secure way to transmit this data over open channels.
+
+In phase 2, sockets will need to be used for real-time data transmission, and MongoDB for data storage and connectivity.
+
 ### 5.2 - Functions
+
+To utilise JWT authentication, there needs to be a function to handle decoding and encoding of the authentication data. This function will be implemented as middleware for each of the endpoints. JWT functionality is used to authorise users based on what permissions they have in a more secure way than simply requesting them as a parameter would be.
 
 ### 5.3 - Files
 
+As explained earlier, part 1 serves as a wrapper to the API. Since there is no functional database assigned yet, files have to be used to store data. In this case, there will be JSON files for the users, the groups, and the channels. In part 2, these files will be implemented as tables in MongoDB.
+
+In terms of layout, the node server is laid out with files in place of the api url. the `/routes/api/group/group.ts` file directly correlates to the `/api/group` endpoints. Speperating out these files in to endpoints groups serves to break the code down in to more manageable pieces, and allows for a more modular approach to design. Improvements could be made such as by seperating out each individual endpoint in to its own file, but it's better than nothing.
+
 ### 5.4 - Global Variables
+
+Global variables should rarely, if ever, be used as they create bad habits in writing code and architectural design. For the Express server, routes are assigned to a global `Router` object. This object is used to define all routes, before setting them as endpoints in the server.
 
 ---
 

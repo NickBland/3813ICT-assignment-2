@@ -1,6 +1,7 @@
 import { Component, Signal, OnInit, computed } from "@angular/core";
 import { User } from "../user";
 import { UserService } from "../user.service";
+import { AuthService } from "../auth.service";
 import { ErrorComponent } from "../error/error.component";
 import { RouterModule } from "@angular/router";
 import {
@@ -22,7 +23,7 @@ export class ProfileComponent implements OnInit {
   // There should also be a pop up form to edit the user's profile
   // This form should have a cancel button and a save button
 
-  // insantiate the signals, and error code here
+  // instantiate the signals, and error code here
   user$ = {} as Signal<User>;
   error: Error | null = null;
   isLoading = true;
@@ -32,7 +33,10 @@ export class ProfileComponent implements OnInit {
 
   profileUpdateForm: FormGroup;
 
-  constructor(private userService: UserService) {
+  constructor(
+    private userService: UserService,
+    private authService: AuthService
+  ) {
     // set the signals up by tracking the global signal states
     this.user$ = computed(() => this.userService.user$());
 
@@ -84,6 +88,29 @@ export class ProfileComponent implements OnInit {
         setTimeout(() => {
           this.success = false;
         }, 5000);
+      },
+      error: (error) => {
+        this.error = error;
+        this.isLoading = false;
+        if (this.error) {
+          if (error.status === 401) {
+            // Get the message from the received API response
+            this.error.message = `${error.status}: ${error.error.message}`;
+          } else {
+            this.error.message = "An unknown error occurred";
+          }
+        }
+      },
+    });
+  }
+
+  deleteUser() {
+    // Delete the user from the database
+    this.userService.deleteUser(this.user$().username).subscribe({
+      next: (response) => {
+        console.log(response);
+        // Log the user out, thereby removing the session storage
+        this.authService.logoutUser();
       },
       error: (error) => {
         this.error = error;

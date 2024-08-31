@@ -43,6 +43,7 @@ export class LoginComponent {
       .subscribe({
         next: (user) => {
           sessionStorage.setItem("authToken", user.authToken ?? "");
+          sessionStorage.setItem("username", user.username);
           this.userService.user$.set(user); // Set the global user signal to the user object returned from the request
           this.authService.refreshLoginState();
           this.router.navigate(["/profile"]);

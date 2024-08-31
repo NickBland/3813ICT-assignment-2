@@ -6,5 +6,13 @@
     "password": "123",
     "roles": ["super"],
     "groups": []
+  },
+  {
+    "username": "joe",
+    "name": "Regular Joe",
+    "email": "joe@joe.com",
+    "password": "12345",
+    "roles": [],
+    "groups": ["Group 1 - Default", "Group 2"]
   }
 ]

@@ -8,8 +8,8 @@ import { Observable } from "rxjs";
 })
 export class UserService {
   private apiURL = "http://localhost:8888";
-  users$ = signal<User[]>([]);
-  user$ = signal<User>({} as User);
+  public users$ = signal<User[]>([]);
+  public user$ = signal<User>({} as User);
 
   constructor(private httpClient: HttpClient) {}
 
@@ -23,10 +23,16 @@ export class UserService {
     return this.httpClient.get<User>(`${this.apiURL}/api/user/${username}`);
   }
 
+  // Update a user
   updateUser(username: string, user: User): Observable<User> {
     return this.httpClient.put<User>(
       `${this.apiURL}/api/user/${username}`,
       user
     );
+  }
+
+  // Delete a user
+  deleteUser(username: string): Observable<User> {
+    return this.httpClient.delete<User>(`${this.apiURL}/api/user/${username}`);
   }
 }

@@ -1,10 +1,11 @@
 @if (error) {
     <app-error [error]="error"></app-error>
 }
+
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <h1 class="text-center">Users</h1>
+            <h1 class="text-center">Groups</h1>
         </div>
     </div>
     <div class="row">
@@ -21,34 +22,38 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th scope="col">Username</th>
-                                    <th scope="col">Email</th>
-                                    <th scope="col">Full Name</th>
-                                    <th scope="col">Roles</th>
-                                    <th scope="col">Group Memberships</th>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Group Name</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col"># Members</th>
+                                    <th scope="col">Admins</th>
                                     <th scope="col" class="button-column"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @for (user of users; track user) {
+                                @for (group of groups; track group) {
                                     <tr>
-                                        <td>{{ user.username }}</td>
-                                        <td>{{ user.email }}</td>
-                                        <td>{{ user.name }}</td>
-                                        <td>{{ user.roles }}</td>
+                                        <td>{{ group.id }}</td>
+                                        <td>{{ group.name }}</td>
+                                        <td>{{ group.description }}</td>
+                                        <td>{{ group.users.length }}</td>
                                         <td>
-                                            @if (user.groups.length > 0) {
+                                            @if (group.admins.length > 0) {
                                                 <ul class="list-group list-group-flush">
-                                                @for (group of user.groups; track group) {
-                                                    <li class="list-group-item">{{ group }}</li>
+                                                @for (admin of group.admins; track admin) {
+                                                    <li class="list-group-item">{{ admin }}</li>
                                                 }
                                                 </ul>
                                             } @else {
-                                                No group memberships
+                                                No admins
                                             }
                                         </td>
                                         <td class="button-column">
-                                            <a [routerLink]="['/profile/', user.username]" class="btn btn-primary">View Profile</a>
+                                            @if (availableGroups[$index]) {
+                                                <a [routerLink]="['/group/', group.id]" class="btn btn-primary">View</a>
+                                            } @else {
+                                                <a [routerLink]="['/group/', group.id]" class="btn btn-primary disabled">View</a>
+                                            }
                                         </td>
                                     </tr>
                                 }
