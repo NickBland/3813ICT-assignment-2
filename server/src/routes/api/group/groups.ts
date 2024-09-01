@@ -171,14 +171,12 @@ groups.delete("/api/group/:id", verifyToken, (req: Request, res: Response) => {
     !decoded?.user.roles.includes(req.params.id + "-admin") &&
     !decoded?.user.roles.includes("super")
   ) {
-    console.log(req.params.id + "-admin");
     return res.status(403).send({ message: "Forbidden" });
   }
 
   // Update the users.json file with by removing references to the group from ALL users
   const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
   users.forEach((user: { groups: string[]; roles: string[] }) => {
-    console.log(user.groups, user.roles);
     const gIndex = user.groups.indexOf(groups[groupIndex].name);
     if (gIndex !== -1) {
       user.groups.splice(gIndex, 1);
@@ -188,8 +186,6 @@ groups.delete("/api/group/:id", verifyToken, (req: Request, res: Response) => {
     if (roleIndex !== -1) {
       user.roles.splice(roleIndex, 1);
     }
-    console.log(user.groups, user.roles);
-    console.log(gIndex, roleIndex);
   });
 
   // Update the channels.json file by removing orphaned channels
@@ -347,7 +343,6 @@ groups.delete(
     users.forEach(
       (user: { username: string; groups: string[]; roles: string[] }) => {
         if (user.username === req.params.username) {
-          console.log(user);
           const groupIndex = user.groups.indexOf(group.name);
           if (groupIndex !== -1) {
             user.groups.splice(groupIndex, 1);

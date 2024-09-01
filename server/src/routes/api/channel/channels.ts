@@ -173,8 +173,6 @@ channels.delete(
       (channel: { id: number }) => channel.id === selectedChannel
     );
 
-    console.log(channel);
-
     if (!channel) {
       return res.status(404).send({ message: "Channel not found" });
     }
