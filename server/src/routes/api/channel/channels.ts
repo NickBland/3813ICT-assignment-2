@@ -382,7 +382,6 @@ channels.get(
 
     // Check if the user is in the channel
     const inChannel = channel.users.includes(username);
-    console.log(channel.users.includes(username));
 
     return res.send(inChannel);
   }
