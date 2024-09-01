@@ -44,9 +44,6 @@ groups.post("/api/group", verifyToken, (req: Request, res: Response) => {
   const id = groups.length ? groups.length + 1 : 1;
   req.body.id = id;
 
-  // Assign an empty array for messages
-  req.body.messages = [];
-
   // Add the user creating the group to the group as both an admin and a user
   // Fetch the user from the token
   const token = req.headers.authorization?.split(" ")[1];
@@ -65,9 +62,10 @@ groups.post("/api/group", verifyToken, (req: Request, res: Response) => {
   user.groups.push(req.body.name);
   user.roles.push(id + "-admin");
 
-  // Update the group to contain the user as both an admin and user
+  // Update the group to contain the user as both an admin and user, and an empty messages array
   req.body.users = [decoded?.user.username];
   req.body.admins = [decoded?.user.username];
+  req.body.channels = [] as string[];
 
   // And remove the user property from the request body
   delete req.body.user;
@@ -194,12 +192,11 @@ groups.delete("/api/group/:id", verifyToken, (req: Request, res: Response) => {
     console.log(gIndex, roleIndex);
   });
 
-  // Update the channels.json file by removing channels that belong to the group
+  // Update the channels.json file by removing orphaned channels
   const channels = JSON.parse(fs.readFileSync("./data/channels.json", "utf-8"));
-  channels.forEach((channel: { group: number }) => {
+  channels.forEach((channel: { group: number }, index: number) => {
     if (channel.group === groupId) {
-      const channelIndex = channels.indexOf(channel);
-      channels.splice(channelIndex, 1);
+      channels.splice(index, 1);
     }
   });
 
@@ -247,15 +244,15 @@ groups.post(
   (req: Request, res: Response) => {
     const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
 
-    let groupId: number;
+    let groupID: number;
 
     // Find the group by ID
     try {
-      groupId = Number(req.params.id);
+      groupID = Number(req.params.id);
     } catch (error) {
       return res.status(400).send({ message: "Invalid group ID", error });
     }
-    const group = groups.find((group: { id: number }) => group.id === groupId);
+    const group = groups.find((group: { id: number }) => group.id === groupID);
 
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
@@ -266,7 +263,7 @@ groups.post(
     const decoded = jwt.decode(token as string) as jwt.JwtPayload;
 
     if (
-      !decoded?.user.roles.includes(req.params.group + "-admin") &&
+      !decoded?.user.roles.includes(groupID + "-admin") &&
       !decoded?.user.roles.includes("super")
     ) {
       return res.status(403).send({ message: "Forbidden" });
@@ -314,10 +311,23 @@ groups.delete(
     const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
 
     // Find the group by name
-    const group = groups.find((group: { id: number }) => group.id === groupID);
+    const group = groups.find(
+      (group: { id: number; name: string }) => group.id === groupID
+    );
 
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
+    }
+
+    // Check that the user is an admin of the group, or a super user
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+
+    if (
+      !decoded?.user.roles.includes(groupID + "-admin") &&
+      !decoded?.user.roles.includes("super")
+    ) {
+      return res.status(403).send({ message: "Forbidden" });
     }
 
     // Find the user by username
@@ -332,28 +342,35 @@ groups.delete(
     // Remove the user from the group (group side)
     group.users.splice(userIndex, 1);
 
-    // Update the users.json file by removing references to the group from ALL users
+    // Update the users.json file by removing references to the group from the user
     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    users.forEach((user: { groups: string[]; roles: string[] }) => {
-      const groupIndex = user.groups.indexOf(req.params.name);
-      if (groupIndex !== -1) {
-        user.groups.splice(groupIndex, 1);
-      }
+    users.forEach(
+      (user: { username: string; groups: string[]; roles: string[] }) => {
+        if (user.username === req.params.username) {
+          console.log(user);
+          const groupIndex = user.groups.indexOf(group.name);
+          if (groupIndex !== -1) {
+            user.groups.splice(groupIndex, 1);
+          }
 
-      const roleIndex = user.roles.indexOf(group.id + "-admin");
-      if (roleIndex !== -1) {
-        user.roles.splice(roleIndex, 1);
+          const roleIndex = user.roles.indexOf(group.id + "-admin");
+          if (roleIndex !== -1) {
+            user.roles.splice(roleIndex, 1);
+          }
+        }
       }
-    });
+    );
 
-    // Update the channels.json file by removing references to the user from ALL channels
+    // Update the channels.json file by removing references to the user from channels in the group
     const channels = JSON.parse(
       fs.readFileSync("./data/channels.json", "utf-8")
     );
-    channels.forEach((channel: { users: string[] }) => {
-      const userIndex = channel.users.indexOf(req.params.username);
-      if (userIndex !== -1) {
-        channel.users.splice(userIndex, 1);
+    channels.forEach((channel: { group: number; users: string[] }) => {
+      if (channel.group === groupID) {
+        const userIndex = channel.users.indexOf(req.params.username);
+        if (userIndex !== -1) {
+          channel.users.splice(userIndex, 1);
+        }
       }
     });
 

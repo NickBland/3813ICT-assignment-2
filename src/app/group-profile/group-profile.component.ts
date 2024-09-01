@@ -13,6 +13,7 @@ import {
 import { firstValueFrom } from "rxjs";
 import { User } from "../user";
 import { UserService } from "../user.service";
+import { AuthService } from "../auth.service";
 
 @Component({
   selector: "app-group-profile",
@@ -42,6 +43,7 @@ export class GroupProfileComponent implements OnInit {
     private groupService: GroupService,
     private channelService: ChannelService,
     private userService: UserService,
+    private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router
   ) {
@@ -301,6 +303,9 @@ export class GroupProfileComponent implements OnInit {
           }
         }
         this.isLoading = false;
+      },
+      complete: () => {
+        this.authService.refreshToken();
       },
     });
   }

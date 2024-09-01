@@ -9,6 +9,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
+import { AuthService } from "../auth.service";
 
 @Component({
   selector: "app-group-list",
@@ -26,7 +27,10 @@ export class GroupListComponent implements OnInit {
 
   groupCreationForm: FormGroup;
 
-  constructor(private groupService: GroupService) {
+  constructor(
+    private groupService: GroupService,
+    private authService: AuthService
+  ) {
     this.groupCreationForm = new FormGroup({
       name: new FormControl("", [Validators.required, Validators.minLength(3)]),
       description: new FormControl("", [
@@ -101,6 +105,9 @@ export class GroupListComponent implements OnInit {
             this.error.message = "An unknown error occurred";
           }
         }
+      },
+      complete: () => {
+        this.authService.refreshToken();
       },
     });
   }
