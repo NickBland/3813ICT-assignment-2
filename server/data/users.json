@@ -4,16 +4,25 @@
     "name": "Super Admin",
     "email": "super@super.com",
     "password": "123",
-    "roles": ["super"],
-    "groups": ["Group 1 - Default", "Group 2", "Group 3"]
+    "roles": [
+      "super"
+    ],
+    "groups": [
+      "Group 1 - Default",
+      "Group 2",
+      "Group 3"
+    ]
   },
   {
     "username": "joe",
     "name": "Regular Joe",
     "email": "joe@joe.com",
     "password": "12345",
-    "roles": ["4-admin"],
-    "groups": ["Group 1 - Default", "Group 2", "Joe Group"]
+    "roles": [],
+    "groups": [
+      "Group 1 - Default",
+      "Group 2"
+    ]
   },
   {
     "username": "joe2",

@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { GroupService } from "../group.service";
 import { ChannelService } from "../channel.service";
-import { ActivatedRoute, RouterModule } from "@angular/router";
+import { ActivatedRoute, RouterModule, Router } from "@angular/router";
 import { Group } from "../group";
 import { ErrorComponent } from "../error/error.component";
 import {
@@ -42,7 +42,8 @@ export class GroupProfileComponent implements OnInit {
     private groupService: GroupService,
     private channelService: ChannelService,
     private userService: UserService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     // Initialise the channel form, with one form control: channelName
     this.channelForm = new FormGroup({
@@ -279,6 +280,29 @@ export class GroupProfileComponent implements OnInit {
     } else {
       this.error = new Error("No group provided");
     }
+  }
+
+  deleteGroup() {
+    this.isLoading = true;
+    // Delete the group
+    this.groupService.deleteGroup(this.groupId ?? 0).subscribe({
+      next: () => {
+        // Redirect to the group list
+        this.router.navigate(["/groups"]);
+      },
+      error: (error) => {
+        this.error = error;
+        if (this.error) {
+          if (error.status) {
+            // Get the message from the received API response
+            this.error.message = `${error.status}: ${error.error.message}`;
+          } else {
+            this.error.message = "An unknown error occurred";
+          }
+        }
+        this.isLoading = false;
+      },
+    });
   }
 
   setAdmin() {

@@ -40,4 +40,11 @@ export class UserService {
   createUser(user: User): Observable<User> {
     return this.httpClient.post<User>(`${this.apiURL}/api/user/`, user);
   }
+
+  // Refresh a user's token
+  refreshToken(username: string): Observable<User> {
+    return this.httpClient.patch<User>(`${this.apiURL}/api/user/refresh`, {
+      username: username,
+    });
+  }
 }
