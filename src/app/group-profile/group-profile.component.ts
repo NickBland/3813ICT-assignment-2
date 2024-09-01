@@ -158,11 +158,9 @@ export class GroupProfileComponent implements OnInit {
 
           this.getChannelNames();
           this.setAdmin();
-          this.isLoading = false;
         },
         error: (error) => {
           this.error = error;
-          this.isLoading = false;
           if (this.error) {
             if (error.status) {
               // Get the message from the received API response
@@ -172,10 +170,12 @@ export class GroupProfileComponent implements OnInit {
             }
           }
         },
+        complete: () => {
+          this.isLoading = false;
+        },
       });
     } else {
       this.error = new Error("No group provided");
-      this.isLoading = false;
     }
   }
 

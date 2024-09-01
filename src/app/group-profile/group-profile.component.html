@@ -53,7 +53,7 @@
                                             <div class="d-flex justify-content-between">
                                                 <span>{{ channelNames[$index] }} | <span class="font-monospace">channel#{{channel}}</span></span>
                                                 <span class="">
-                                                    <a [routerLink]="['/channel/', channel]" class="btn btn-secondary">Chat</a>
+                                                    <a [routerLink]="['./', channel]" class="btn btn-secondary">Chat</a>
                                                     @if (isAdmin) {
                                                         <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmationModal" (click)="assignDeleteChannel(channel)">Delete</button>
                                                         <div class="modal fade" id="confirmationModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
