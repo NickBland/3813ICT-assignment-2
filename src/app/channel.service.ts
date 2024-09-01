@@ -47,6 +47,29 @@ export class ChannelService {
     );
   }
 
+  // Add a user to a channel
+  addUserToChannel(channelId: number, username: string) {
+    return this.httpClient.post<Channel>(
+      `${this.apiURL}/api/channel/${channelId}/${username}`,
+      {}
+    );
+  }
+
+  // Remove a user from a channel
+  removeUserFromChannel(channelId: number, username: string) {
+    return this.httpClient.delete<Channel>(
+      `${this.apiURL}/api/channel/${channelId}/${username}`,
+      {}
+    );
+  }
+
+  // Get whether a user is in a channel
+  isUserInChannel(channelId: number, username: string) {
+    return this.httpClient.get<boolean>(
+      `${this.apiURL}/api/channel/${channelId}/${username}`
+    );
+  }
+
   // Channel Name -> ID
   async getChannelIdFromName(channelName = "", channelNames: string[] = []) {
     const channels = await firstValueFrom(this.getChannels(0));

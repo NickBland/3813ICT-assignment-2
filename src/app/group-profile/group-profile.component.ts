@@ -11,6 +11,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { Modal } from "bootstrap";
+import { firstValueFrom } from "rxjs";
 
 @Component({
   selector: "app-group-profile",
@@ -125,6 +126,26 @@ export class GroupProfileComponent implements OnInit {
     return this.channelNames;
   }
 
+  async onlyViewableChannels() {
+    // Using the array of channel IDs, use the isUserInChannel function to determine if the user is in the channel
+    // If the user is in the channel, do nothing. If they aren't in the channel, remove the channel from the array
+    const viewableChannels = [] as number[];
+
+    for (const channelID of this.group.channels) {
+      const isUserInChannel = await firstValueFrom(
+        this.channelService.isUserInChannel(
+          channelID,
+          sessionStorage.getItem("username") ?? ""
+        )
+      );
+
+      if (isUserInChannel) {
+        viewableChannels.push(channelID);
+      }
+    }
+    this.group.channels = viewableChannels;
+  }
+
   getGroup() {
     // Get the user's profile
     if (this.groupId) {
@@ -132,6 +153,9 @@ export class GroupProfileComponent implements OnInit {
         next: (value) => {
           // Set the user object to the received user
           this.group = value;
+
+          this.onlyViewableChannels();
+
           this.getChannelNames();
           this.setAdmin();
           this.isLoading = false;
@@ -140,7 +164,7 @@ export class GroupProfileComponent implements OnInit {
           this.error = error;
           this.isLoading = false;
           if (this.error) {
-            if (error.status === 401) {
+            if (error.status) {
               // Get the message from the received API response
               this.error.message = `${error.status}: ${error.error.message}`;
             } else {

@@ -39,7 +39,6 @@ channels.get(
       const channels = JSON.parse(
         fs.readFileSync("./data/channels.json", "utf-8")
       );
-      console.log(channels);
       return res.send(channels);
     }
 
@@ -91,7 +90,8 @@ channels.post(
       name: req.body.name,
       description: req.body.description,
       group: 0,
-      messages: [],
+      users: [] as string[],
+      messages: [] as string[],
     };
 
     const channels = JSON.parse(
@@ -112,6 +112,11 @@ channels.post(
     if (channel) {
       return res.status(409).send({ message: "Channel already exists" });
     }
+
+    // Assign the user that created the channel to the channel (from the JWT token)
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+    newChannel.users.push(decoded?.user.username);
 
     // Assign the new channel an ID
     newChannel.id = channels.length ? channels.length + 1 : 1;
@@ -245,5 +250,140 @@ channels.put(
     } catch (error) {
       return res.status(500).send({ message: "Error writing to file", error });
     }
+  }
+);
+
+// Add a user to a channel (given a channel ID and username)
+channels.post(
+  "/api/channel/:channelID/:username",
+  verifyToken,
+  (req: Request, res: Response) => {
+    const selectedChannel = Number(req.params.channelID);
+    const username = req.params.username;
+
+    const channels = JSON.parse(
+      fs.readFileSync("./data/channels.json", "utf-8")
+    );
+
+    // Check if the channel exists
+    const channel = channels.find(
+      (channel: { id: number }) => channel.id === selectedChannel
+    );
+
+    if (!channel) {
+      return res.status(404).send({ message: "Channel not found" });
+    }
+
+    // Check if the user exists
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+    const user = users.find((user: { username: string }) => {
+      return user.username === username;
+    });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // Add the user to the channel
+    channel.users.push(username);
+
+    // Update the channels file
+    try {
+      fs.writeFileSync(
+        "./data/channels.json",
+        JSON.stringify(channels, null, 2)
+      );
+      return res.send({ message: "User added to channel" });
+    } catch (error) {
+      return res.status(500).send({ message: "Error writing to file", error });
+    }
+  }
+);
+
+// Remove a user from a channel (given a channel ID and username)
+channels.delete(
+  "/api/channel/:channelID/:username",
+  verifyToken,
+  (req: Request, res: Response) => {
+    const selectedChannel = Number(req.params.channelID);
+    const username = req.params.username;
+
+    const channels = JSON.parse(
+      fs.readFileSync("./data/channels.json", "utf-8")
+    );
+
+    // Check if the channel exists
+    const channel = channels.find(
+      (channel: { id: number }) => channel.id === selectedChannel
+    );
+
+    if (!channel) {
+      return res.status(404).send({ message: "Channel not found" });
+    }
+
+    // Check if the user exists
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+    const user = users.find((user: { username: string }) => {
+      return user.username === username;
+    });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // Remove the user from the channel
+    channel.users = channel.users.filter(
+      (channelUser: string) => channelUser !== username
+    );
+
+    // Update the channels file
+    try {
+      fs.writeFileSync(
+        "./data/channels.json",
+        JSON.stringify(channels, null, 2)
+      );
+      return res.send({ message: "User removed from channel" });
+    } catch (error) {
+      return res.status(500).send({ message: "Error writing to file", error });
+    }
+  }
+);
+
+// Get whether a user is in a channel (given a channel ID and username)
+channels.get(
+  "/api/channel/:channelID/:username",
+  verifyToken,
+  (req: Request, res: Response) => {
+    const selectedChannel = Number(req.params.channelID);
+    const username = req.params.username;
+
+    const channels = JSON.parse(
+      fs.readFileSync("./data/channels.json", "utf-8")
+    );
+
+    // Check if the channel exists
+    const channel = channels.find(
+      (channel: { id: number }) => channel.id === selectedChannel
+    );
+
+    if (!channel) {
+      return res.status(404).send({ message: "Channel not found" });
+    }
+
+    // Check if the user exists
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+    const user = users.find((user: { username: string }) => {
+      return user.username === username;
+    });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // Check if the user is in the channel
+    const inChannel = channel.users.includes(username);
+    console.log(channel.users.includes(username));
+
+    return res.send(inChannel);
   }
 );

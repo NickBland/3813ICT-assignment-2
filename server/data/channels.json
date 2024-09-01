@@ -4,20 +4,15 @@
     "name": "General",
     "description": "General discussion",
     "group": 1,
-    "messages": [
-      {
-        "id": 1,
-        "author": "John Doe",
-        "content": "Hello, world!",
-        "timestamp": "2020-01-01T12:00:00"
-      }
-    ]
+    "users": ["super", "joe"],
+    "messages": []
   },
   {
     "id": 2,
     "name": "Random",
     "description": "Random discussion",
     "group": 1,
+    "users": ["super"],
     "messages": []
   },
   {
@@ -25,6 +20,7 @@
     "name": "Secret",
     "description": "Secret discussion",
     "group": 2,
+    "users": [],
     "messages": []
   },
   {
@@ -32,6 +28,7 @@
     "name": "General 2",
     "description": "General discussion",
     "group": 3,
+    "users": [],
     "messages": []
   },
   {
@@ -39,6 +36,7 @@
     "name": "Awesome Chat!",
     "description": "some description!",
     "group": 1,
+    "users": [],
     "messages": []
   },
   {
@@ -46,6 +44,7 @@
     "name": "Awesome Chat 2! - UPDATED",
     "description": "some description!",
     "group": 1,
+    "users": [],
     "messages": []
   }
 ]
