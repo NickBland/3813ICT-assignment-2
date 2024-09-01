@@ -23,5 +23,13 @@
       "Group 1 - Default",
       "Group 2"
     ]
+  },
+  {
+    "username": "joe2",
+    "name": "",
+    "password": "12345",
+    "email": "Joe2@joe.com",
+    "roles": [],
+    "groups": []
   }
 ]

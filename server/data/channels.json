@@ -4,7 +4,10 @@
     "name": "General",
     "description": "General discussion",
     "group": 1,
-    "users": ["super", "joe"],
+    "users": [
+      "super",
+      "joe"
+    ],
     "messages": []
   },
   {
@@ -12,7 +15,9 @@
     "name": "Random",
     "description": "Random discussion",
     "group": 1,
-    "users": ["super"],
+    "users": [
+      "super"
+    ],
     "messages": []
   },
   {
@@ -36,15 +41,19 @@
     "name": "Awesome Chat!",
     "description": "some description!",
     "group": 1,
-    "users": [],
+    "users": [
+      "super"
+    ],
     "messages": []
   },
   {
     "id": 6,
-    "name": "Awesome Chat 2! - UPDATED",
-    "description": "some description!",
+    "name": "new Channel",
+    "description": "testing",
     "group": 1,
-    "users": [],
+    "users": [
+      "super"
+    ],
     "messages": []
   }
 ]

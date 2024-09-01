@@ -1,1 +1,61 @@
-<p>channel works!</p>
+@if (error) {
+    <app-error [error]="error"></app-error>
+}
+<!-- Add in 2 columns, the left one taking up 3/4 space, and the right taking up the final quarter -->
+<div class="row">
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-body">
+                @if(!isLoading) {
+                    <div class="card-text">
+                        <h1 class="card-title">{{ channel.name }}</h1>
+                        <h4 class="card-subtitle text-body-secondary">{{ channel.description }}</h4>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <p class="card-header">Channel Path</p>
+                <nav class="card-text" aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/groups">Groups</a></li>
+                        @if(!isLoading) {
+                            <li class="breadcrumb-item"><a href="/group/{{ group.id }}">{{ group.name }}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ channel.name }}</li>
+                        }
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-9">
+        <div class="card">
+
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <p class="card-header">Channel Members</p>
+                <ul class="list-group list-group-flush">
+                    @for (user of group.users; track user) {
+                        <li class="list-group-item">
+                            <span>{{ user }} @if (group.admins.includes(user)) { [Group Admin] }</span>    
+                        </li>
+                    }
+                    @if (isGroupAdmin) {
+                        <li class="list-group-item d-flex">
+                            <button class="btn btn-success flex-fill" (click)="addUser()">Add Users</button>
+                            <button class="btn btn-danger flex-fill" (click)="removeUser()">Remove Users</button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

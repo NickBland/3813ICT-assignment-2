@@ -55,20 +55,20 @@ channels.get(
   }
 );
 
-// Get information about a specific channel
+// Get information about a specific channel given the channel ID
 channels.get(
   "/api/channel/:channel",
   verifyToken,
   (req: Request, res: Response) => {
-    const selectedChannel = req.params.channel;
+    const selectedChannel = Number(req.params.channel);
 
     const channels = JSON.parse(
       fs.readFileSync("./data/channels.json", "utf-8")
     );
 
     // Check if the channel exists
-    const channel = channels.find((channel: { name: string }) => {
-      return channel.name === selectedChannel;
+    const channel = channels.find((channel: { id: number }) => {
+      return channel.id === selectedChannel;
     });
 
     if (!channel) {
