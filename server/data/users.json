@@ -5,7 +5,7 @@
     "email": "super@super.com",
     "password": "123",
     "roles": ["super"],
-    "groups": []
+    "groups": ["Group 1 - Default", "Group 2", "Group 3"]
   },
   {
     "username": "joe",

@@ -4,11 +4,18 @@ import { ChannelService } from "../channel.service";
 import { ActivatedRoute, RouterModule } from "@angular/router";
 import { Group } from "../group";
 import { ErrorComponent } from "../error/error.component";
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
+import { Modal } from "bootstrap";
 
 @Component({
   selector: "app-group-profile",
   standalone: true,
-  imports: [ErrorComponent, RouterModule],
+  imports: [ErrorComponent, RouterModule, ReactiveFormsModule],
   templateUrl: "./group-profile.component.html",
   styleUrl: "./group-profile.component.scss",
 })
@@ -19,12 +26,90 @@ export class GroupProfileComponent implements OnInit {
   channelNames: string[] = [];
   error: Error | null = null;
   isLoading = true;
+  isAdmin = false;
+
+  channelForm: FormGroup;
 
   constructor(
     private groupService: GroupService,
     private channelService: ChannelService,
     private route: ActivatedRoute
-  ) {}
+  ) {
+    // Initialise the channel form, with one form control: channelName
+    this.channelForm = new FormGroup({
+      channelName: new FormControl("", [Validators.required]),
+      channelDescription: new FormControl("", [Validators.required]),
+    });
+  }
+
+  // Create a channel
+  createChannel() {
+    this.isLoading = true;
+    // Create the channel
+    this.channelService
+      .createChannel(this.group.id, {
+        name: this.channelForm.value.channelName,
+        description: this.channelForm.value.channelDescription,
+      })
+      .subscribe({
+        next: () => {
+          // Re-get the group to update the channel list
+          this.getGroup();
+
+          // Finally, reset the form, and close the modal
+          this.channelForm.reset();
+          const channelModal = new Modal("#channelModal");
+          channelModal.hide();
+        },
+        error: (error) => {
+          this.error = error;
+          if (this.error) {
+            if (error.status === 401) {
+              // Get the message from the received API response
+              this.error.message = `${error.status}: ${error.error.message}`;
+            } else {
+              this.error.message = "An unknown error occurred";
+            }
+          }
+          this.isLoading = false;
+        },
+      });
+  }
+
+  // Assign the channel to be deleted
+  deleteChannelId = 0;
+  assignDeleteChannel(channelId: number) {
+    this.deleteChannelId = channelId;
+  }
+
+  // Delete a channel
+  deleteChannel() {
+    this.isLoading = true;
+    if (this.deleteChannelId === 0) {
+      this.error = new Error("No channel provided");
+      this.isLoading = false;
+      return;
+    }
+    this.channelService.deleteChannel(this.deleteChannelId).subscribe({
+      next: () => {
+        this.assignDeleteChannel(0);
+        // Re-get the group to update the channel list
+        this.getGroup();
+      },
+      error: (error) => {
+        this.error = error;
+        if (this.error) {
+          if (error.status === 401) {
+            // Get the message from the received API response
+            this.error.message = `${error.status}: ${error.error.message}`;
+          } else {
+            this.error.message = "An unknown error occurred";
+          }
+        }
+        this.isLoading = false;
+      },
+    });
+  }
 
   async getChannelNames() {
     // Get a list of all channels for the group
@@ -48,6 +133,7 @@ export class GroupProfileComponent implements OnInit {
           // Set the user object to the received user
           this.group = value;
           this.getChannelNames();
+          this.setAdmin();
           this.isLoading = false;
         },
         error: (error) => {
@@ -69,6 +155,15 @@ export class GroupProfileComponent implements OnInit {
     }
   }
 
+  setAdmin() {
+    // Determine if the logged in user is an admin of the group
+    if (this.group.admins.includes(sessionStorage.getItem("username") ?? "")) {
+      this.isAdmin = true;
+    } else {
+      this.isAdmin = false;
+    }
+  }
+
   ngOnInit() {
     // Get the information of the user to view from the URL params
     try {
@@ -79,7 +174,7 @@ export class GroupProfileComponent implements OnInit {
       this.isLoading = false;
     }
 
-    // Get the user's profile
+    // Get the group's profile
     this.getGroup();
   }
 }

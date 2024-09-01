@@ -24,10 +24,10 @@ export class ChannelService {
     );
   }
 
-  // Create a channel
-  createChannel(channel: Channel) {
+  // Create a channel for a group
+  createChannel(groupID: number, channel: Channel) {
     return this.httpClient.post<Channel>(
-      `${this.apiURL}/api/channel/`,
+      `${this.apiURL}/api/channel/${groupID}`,
       channel
     );
   }
@@ -46,22 +46,6 @@ export class ChannelService {
       channel
     );
   }
-
-  // if (groupNames.length > 0) {
-  //   const groupIds: number[] = [];
-  //   for (const group of groups) {
-  //     if (groupNames.includes(group.name)) {
-  //       groupIds.push(group.id);
-  //     }
-  //   }
-  //   return groupIds;
-  // } else {
-  //   for (const group of groups) {
-  //     if (group.name === groupName) {
-  //       return group.id;
-  //     }
-  //   }
-  // }
 
   // Channel Name -> ID
   async getChannelIdFromName(channelName = "", channelNames: string[] = []) {
