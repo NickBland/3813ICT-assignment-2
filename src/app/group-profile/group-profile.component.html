@@ -34,7 +34,7 @@
                                     <li class="list-group-item">
                                         <div class="d-flex justify-content-between">
                                             <span>{{ user }} @if (group.admins.includes(user)) { [Group Admin] }</span>
-                                            <a [routerLink]="['/account/', user]" class="btn btn-primary">View Profile</a>
+                                            <a [routerLink]="['/profile/', user]" class="btn btn-primary">View Profile</a>
                                         </div>      
                                     </li>
                                 }
@@ -44,24 +44,88 @@
                             <p class="card-text">No group members</p>
                         }
                         <hr>
-                        
-                        @if (group.channels.length > 0) {
-                            <div class="card">
-                                <p class="card-header">Channels:</p>
-                                <ul class="list-group list-group-flush">
-                                @for (channel of group.channels; track channel) {
-                                    <li class="list-group-item">Channel Name: {{ channel }}</li>
-                                }
-                                </ul>
-                            </div>
-                        } @else {
-                            <div class="card">
-                                <p class="card-header">Channels:</p>
-                                <ul class="list-group list-group-flush">
+                        <div class="card">
+                            <p class="card-header">Channels:</p>
+                            <ul class="list-group list-group-flush">
+                                @if (group.channels.length > 0) {
+                                    @for (channel of group.channels; track channel) {
+                                        <li class="list-group-item">
+                                            <div class="d-flex justify-content-between">
+                                                <span>{{ channelNames[$index] }} | <span class="font-monospace">channel#{{channel}}</span></span>
+                                                <span class="">
+                                                    <a [routerLink]="['./', channel]" class="btn btn-secondary">Chat</a>
+                                                    @if (isAdmin) {
+                                                        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmationModal" (click)="assignDeleteChannel(channel)">Delete</button>
+                                                        <div class="modal fade" id="confirmationModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+                                                            <div class="modal-dialog">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <h1 class="modal-title fs-5" id="confirmationModalLabel">Are you sure you want to delete this channel?</h1>
+                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" (click)="assignDeleteChannel(0)"></button>
+                                                                    </div>
+                                                                    <div class="modal-body">
+                                                                        This action is irreversible.
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="assignDeleteChannel(0)">Cancel</button>
+                                                                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" (click)="deleteChannel()">Confirm</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </span>
+                                            </div>
+                                        </li>
+                                    }
+                                    @if (isAdmin) {
+                                        <li class="list-group-item">
+                                            <div class="d-flex justify-content-end">
+                                                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addChannelModal">Add Channel</button>
+                                            </div>
+                                            <div class="modal fade" id="addChannelModal" tabindex="-1" aria-labelledby="addChannelModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <form [formGroup]="channelForm" (submit)="createChannel()">
+                                                            <div class="modal-header">
+                                                            <h1 class="modal-title fs-5" id="addChannelModalLabel">Add Channel</h1>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body"> 
+                                                                <div class="mb-3">
+                                                                    <label for="channelName" class="form-label" >Channel Name</label>
+                                                                    <input type="text" class="form-control" id="channelName" formControlName="channelName">
+                                                                    @if (channelForm.controls['channelName'].invalid && channelForm.controls['channelName'].touched) {
+                                                                        <div class="text-danger">
+                                                                            A channel name is required
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="channelDescription" class="form-label">Description</label>
+                                                                    <input type="text" class="form-control" id="channelDescription" formControlName="channelDescription">
+                                                                    @if (channelForm.controls['channelDescription'].invalid && channelForm.controls['channelDescription'].touched) {
+                                                                        <div class="text-danger">
+                                                                            A channel description is required
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                <button type="button submit" class="btn btn-primary" data-bs-dismiss="modal">Save changes</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    }
+                                } @else {
                                     <li class="list-group-item">No channels</li>
-                                </ul>
-                            </div>
-                        }
+                                }
+                            </ul>
+                        </div>
                     }
                 </div>
             </div>

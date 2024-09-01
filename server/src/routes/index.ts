@@ -7,6 +7,7 @@ import { healthcheck } from "./healthcheck";
 import { login } from "./api/user/login";
 import { users } from "./api/user/users";
 import { groups } from "./api/group/groups";
+import { channels } from "./api/channel/channels";
 
 export const routes: Router = express.Router(); // Get the router instance
 
@@ -17,3 +18,4 @@ routes.use(healthcheck);
 routes.use(login);
 routes.use(users);
 routes.use(groups);
+routes.use(channels);

@@ -4,6 +4,5 @@ export interface Group {
   description: string;
   users: string[];
   admins: string[];
-  // channels: channel[];
-  channels: string[]; // NOT YET IMPLEMENTED, JUST A PLACEHOLDER FOR NOW
+  channels: number[];
 }

@@ -93,7 +93,7 @@ export class ProfileComponent implements OnInit {
         this.error = error;
         this.isLoading = false;
         if (this.error) {
-          if (error.status === 401) {
+          if (error.status) {
             // Get the message from the received API response
             this.error.message = `${error.status}: ${error.error.message}`;
           } else {
@@ -116,7 +116,7 @@ export class ProfileComponent implements OnInit {
         this.error = error;
         this.isLoading = false;
         if (this.error) {
-          if (error.status === 401) {
+          if (error.status) {
             // Get the message from the received API response
             this.error.message = `${error.status}: ${error.error.message}`;
           } else {

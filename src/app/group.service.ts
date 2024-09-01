@@ -85,7 +85,7 @@ export class GroupService {
     if (groupIDs.length > 0) {
       const groupNames: string[] = [];
       for (const group of groups) {
-        if (group.id === groupId) {
+        if (groupIDs.includes(group.id)) {
           groupNames.push(group.name);
         }
       }

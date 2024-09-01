@@ -4,6 +4,7 @@ export interface User {
   email: string;
   roles: string[];
   groups: string[];
+  password?: string;
   authToken?: string;
   loggedIn?: boolean;
 }

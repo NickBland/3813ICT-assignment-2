@@ -4,8 +4,14 @@
     "name": "Super Admin",
     "email": "super@super.com",
     "password": "123",
-    "roles": ["super"],
-    "groups": []
+    "roles": [
+      "super"
+    ],
+    "groups": [
+      "Group 1 - Default",
+      "Group 2",
+      "Group 3"
+    ]
   },
   {
     "username": "joe",
@@ -13,6 +19,17 @@
     "email": "joe@joe.com",
     "password": "12345",
     "roles": [],
-    "groups": ["Group 1 - Default", "Group 2"]
+    "groups": [
+      "Group 1 - Default",
+      "Group 2"
+    ]
+  },
+  {
+    "username": "joe2",
+    "name": "",
+    "password": "12345",
+    "email": "Joe2@joe.com",
+    "roles": [],
+    "groups": []
   }
 ]
