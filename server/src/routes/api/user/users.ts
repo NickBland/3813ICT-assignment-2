@@ -270,3 +270,28 @@ users.put(
     return res.status(200).send({ message: "User upgraded to group-admin" });
   }
 );
+
+// Refresh the JWT token for the user
+users.patch("/api/user/refresh", verifyToken, (req: Request, res: Response) => {
+  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+
+  // Ensure that the user updating the token is the same as the user in the JWT token
+  const token = req.headers.authorization?.split(" ")[1];
+  const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+
+  if (decoded?.user.username !== req.body.username) {
+    return res.status(403).send({ message: "Forbidden" });
+  }
+
+  const user = users.find(
+    (user: { username: string }) => user.username === req.body.username
+  );
+
+  if (!user) {
+    return res.status(404).send({ message: "User not Found" });
+  }
+
+  delete user.password; // Remove the password property from the response
+  user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
+  return res.send(user);
+});

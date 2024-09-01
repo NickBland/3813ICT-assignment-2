@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { GroupService } from "../group.service";
 import { ChannelService } from "../channel.service";
-import { ActivatedRoute, RouterModule } from "@angular/router";
+import { ActivatedRoute, RouterModule, Router } from "@angular/router";
 import { Group } from "../group";
 import { ErrorComponent } from "../error/error.component";
 import {
@@ -10,8 +10,10 @@ import {
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
-import { Modal } from "bootstrap";
 import { firstValueFrom } from "rxjs";
+import { User } from "../user";
+import { UserService } from "../user.service";
+import { AuthService } from "../auth.service";
 
 @Component({
   selector: "app-group-profile",
@@ -31,15 +33,33 @@ export class GroupProfileComponent implements OnInit {
 
   channelForm: FormGroup;
 
+  users = [] as User[];
+  usersToAdd = [] as string[];
+  usersToRemove = [] as string[];
+  addUserForm: FormGroup;
+  removeUserForm: FormGroup;
+
   constructor(
     private groupService: GroupService,
     private channelService: ChannelService,
-    private route: ActivatedRoute
+    private userService: UserService,
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     // Initialise the channel form, with one form control: channelName
     this.channelForm = new FormGroup({
       channelName: new FormControl("", [Validators.required]),
       channelDescription: new FormControl("", [Validators.required]),
+    });
+
+    // Initialise the other forms
+    this.addUserForm = new FormGroup({
+      username: new FormControl(this.usersToAdd, [Validators.required]),
+    });
+
+    this.removeUserForm = new FormGroup({
+      username: new FormControl(this.usersToRemove, [Validators.required]),
     });
   }
 
@@ -59,8 +79,6 @@ export class GroupProfileComponent implements OnInit {
 
           // Finally, reset the form, and close the modal
           this.channelForm.reset();
-          const channelModal = new Modal("#channelModal");
-          channelModal.hide();
         },
         error: (error) => {
           this.error = error;
@@ -146,7 +164,93 @@ export class GroupProfileComponent implements OnInit {
     this.group.channels = viewableChannels;
   }
 
+  async getUsers(all = false) {
+    // Reset the arrays
+    this.usersToAdd = [];
+    this.usersToRemove = [];
+
+    // Check if the users array needs to be updated with all users
+    if (all) {
+      this.users = await firstValueFrom(this.userService.getUsers());
+    }
+
+    // Determine which users are not in the group, and which ones are
+    for (const user of this.users) {
+      if (user.username !== sessionStorage.getItem("username")) {
+        if (this.group.users.includes(user.username)) {
+          this.usersToRemove.push(user.username);
+        } else {
+          this.usersToAdd.push(user.username);
+        }
+      }
+    }
+  }
+
+  addUser() {
+    this.isLoading = true;
+    // Add the user to the group
+    this.groupService
+      .addUserToGroup(this.groupId ?? 0, this.addUserForm.value.username)
+      .subscribe({
+        next: () => {
+          // Re-get the group to update the user list
+          this.getGroup();
+          this.getUsers();
+          this.addUserForm.reset();
+        },
+        error: (error) => {
+          this.error = error;
+          if (this.error) {
+            if (error.status) {
+              // Get the message from the received API response
+              this.error.message = `${error.status}: ${error.error.message}`;
+            } else {
+              this.error.message = "An unknown error occurred";
+            }
+          }
+          this.isLoading = false;
+        },
+        complete: () => {
+          this.isLoading = false;
+        },
+      });
+  }
+
+  removeUser() {
+    this.isLoading = true;
+    // Remove the user from the group
+    this.groupService
+      .removeUserFromGroup(
+        this.groupId ?? 0,
+        this.removeUserForm.value.username
+      )
+      .subscribe({
+        next: () => {
+          // Re-get the group to update the user list
+          this.getGroup();
+          this.getUsers();
+          this.removeUserForm.reset();
+        },
+        error: (error) => {
+          this.error = error;
+          if (this.error) {
+            if (error.status) {
+              // Get the message from the received API response
+              this.error.message = `${error.status}: ${error.error.message}`;
+            } else {
+              this.error.message = "An unknown error occurred";
+            }
+          }
+          this.isLoading = false;
+        },
+        complete: () => {
+          this.isLoading = false;
+        },
+      });
+  }
+
   getGroup() {
+    this.isLoading = true;
     // Get the user's profile
     if (this.groupId) {
       this.groupService.getGroup(this.groupId).subscribe({
@@ -154,8 +258,9 @@ export class GroupProfileComponent implements OnInit {
           // Set the user object to the received user
           this.group = value;
 
-          this.onlyViewableChannels();
+          this.getUsers(true);
 
+          this.onlyViewableChannels();
           this.getChannelNames();
           this.setAdmin();
         },
@@ -177,6 +282,32 @@ export class GroupProfileComponent implements OnInit {
     } else {
       this.error = new Error("No group provided");
     }
+  }
+
+  deleteGroup() {
+    this.isLoading = true;
+    // Delete the group
+    this.groupService.deleteGroup(this.groupId ?? 0).subscribe({
+      next: () => {
+        // Redirect to the group list
+        this.router.navigate(["/groups"]);
+      },
+      error: (error) => {
+        this.error = error;
+        if (this.error) {
+          if (error.status) {
+            // Get the message from the received API response
+            this.error.message = `${error.status}: ${error.error.message}`;
+          } else {
+            this.error.message = "An unknown error occurred";
+          }
+        }
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.authService.refreshToken();
+      },
+    });
   }
 
   setAdmin() {

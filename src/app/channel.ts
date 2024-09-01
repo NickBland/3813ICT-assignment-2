@@ -5,5 +5,6 @@ export interface Channel {
   name: string;
   description: string;
   group?: number;
+  users?: string[];
   messages?: string[]; // This should be Message[], but that hasn't been defined at this stage
 }

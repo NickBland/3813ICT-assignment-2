@@ -3,22 +3,42 @@ import { Group } from "../group";
 import { GroupService } from "../group.service";
 import { ErrorComponent } from "../error/error.component";
 import { RouterModule } from "@angular/router";
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
+import { AuthService } from "../auth.service";
 
 @Component({
   selector: "app-group-list",
   standalone: true,
-  imports: [ErrorComponent, RouterModule],
+  imports: [ErrorComponent, RouterModule, ReactiveFormsModule],
   templateUrl: "./group-list.component.html",
   styleUrl: "./group-list.component.scss",
 })
 export class GroupListComponent implements OnInit {
-  constructor(private groupService: GroupService) {}
-
   // Display a list of groups on the screen
   groups = [] as Group[];
   availableGroups: boolean[] = [];
   error: Error | null = null;
   isLoading = true;
+
+  groupCreationForm: FormGroup;
+
+  constructor(
+    private groupService: GroupService,
+    private authService: AuthService
+  ) {
+    this.groupCreationForm = new FormGroup({
+      name: new FormControl("", [Validators.required, Validators.minLength(3)]),
+      description: new FormControl("", [
+        Validators.required,
+        Validators.minLength(3),
+      ]),
+    });
+  }
 
   // Get the logged in user's groups to determine which view buttons should be active
   async getUserGroups() {
@@ -54,18 +74,29 @@ export class GroupListComponent implements OnInit {
     return this.availableGroups;
   }
 
-  getGroups() {
-    // Get the list of groups
-    this.groupService.getGroups().subscribe({
-      next: (value) => {
-        // Set the groups array to the received groups
-        this.groups = value;
-        this.getUserGroups();
-        this.isLoading = false;
+  // Create a new group
+  createGroup() {
+    // Create a new slimmed-down group object with the values from the form
+    const newGroup = {
+      name: this.groupCreationForm.value.name,
+      description: this.groupCreationForm.value.description,
+    };
+
+    this.groupService.createGroup(newGroup).subscribe({
+      next: (response) => {
+        // Value returns both the group and a new authToken for the user
+        const { group, authToken } = response;
+
+        sessionStorage.setItem("authToken", authToken);
+
+        // Add the new group to the groups array
+        this.groups.push(group);
+
+        this.groupCreationForm.reset();
+        this.getGroups();
       },
       error: (error) => {
         this.error = error;
-        this.isLoading = false;
         if (this.error) {
           if (error.status) {
             // Get the message from the received API response
@@ -74,6 +105,35 @@ export class GroupListComponent implements OnInit {
             this.error.message = "An unknown error occurred";
           }
         }
+      },
+      complete: () => {
+        this.authService.refreshToken();
+      },
+    });
+  }
+
+  getGroups() {
+    // Get the list of groups
+    this.groupService.getGroups().subscribe({
+      next: (value) => {
+        // Set the groups array to the received groups
+        this.groups = value;
+        this.getUserGroups();
+      },
+      error: (error) => {
+        this.error = error;
+        if (this.error) {
+          if (error.status) {
+            // Get the message from the received API response
+            this.error.message = `${error.status}: ${error.error.message}`;
+          } else {
+            this.error.message = "An unknown error occurred";
+          }
+        }
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
       },
     });
   }

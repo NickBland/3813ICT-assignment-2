@@ -29,8 +29,14 @@ export class GroupService {
   }
 
   // Create a group
-  createGroup(group: Group): Observable<Group> {
-    return this.httpClient.post<Group>(`${this.apiURL}/api/group/`, group);
+  createGroup(group: {
+    name: string;
+    description: string;
+  }): Observable<{ group: Group; authToken: string }> {
+    return this.httpClient.post<{ group: Group; authToken: string }>(
+      `${this.apiURL}/api/group`,
+      group
+    );
   }
 
   // Delete a group
@@ -41,15 +47,15 @@ export class GroupService {
   // Add a user to a group
   addUserToGroup(groupId: number, username: string): Observable<Group> {
     return this.httpClient.post<Group>(
-      `${this.apiURL}/api/group/${groupId}/add_user/${username}`,
+      `${this.apiURL}/api/group/${groupId}/user/${username}`,
       {}
     );
   }
 
   // Remove a user from a group
   removeUserFromGroup(groupId: number, username: string): Observable<Group> {
-    return this.httpClient.post<Group>(
-      `${this.apiURL}/api/group/${groupId}/remove_user/${username}`,
+    return this.httpClient.delete<Group>(
+      `${this.apiURL}/api/group/${groupId}/user/${username}`,
       {}
     );
   }

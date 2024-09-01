@@ -52,6 +52,7 @@ export class ProfileComponent implements OnInit {
   // Get the user's profile
   getUser() {
     // Since the user is logged in, but signals are not updated between refreshes, we need to first get the user details from the JWT token
+    this.authService.refreshToken();
     let token = sessionStorage.getItem("authToken");
     if (token) {
       token = token.split(".")[1]; // Get the payload from the JWT token (Ignore the header and signature)
