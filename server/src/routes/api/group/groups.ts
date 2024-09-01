@@ -289,17 +289,16 @@ groups.post(
   }
 );
 
-// Remove a user from a group
+// Remove a user from a group given the ID and username
 groups.delete(
-  "/api/group/:name/user/:username",
+  "/api/group/:id/user/:username",
   verifyToken,
   (req: Request, res: Response) => {
+    const groupID = Number(req.params.id);
     const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
 
     // Find the group by name
-    const group = groups.find(
-      (group: { name: string }) => group.name === req.params.name
-    );
+    const group = groups.find((group: { id: number }) => group.id === groupID);
 
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
@@ -331,10 +330,25 @@ groups.delete(
       }
     });
 
+    // Update the channels.json file by removing references to the user from ALL channels
+    const channels = JSON.parse(
+      fs.readFileSync("./data/channels.json", "utf-8")
+    );
+    channels.forEach((channel: { users: string[] }) => {
+      const userIndex = channel.users.indexOf(req.params.username);
+      if (userIndex !== -1) {
+        channel.users.splice(userIndex, 1);
+      }
+    });
+
     // Write the updated groups array back to the file
     try {
       fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
       fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+      fs.writeFileSync(
+        "./data/channels.json",
+        JSON.stringify(channels, null, 2)
+      );
       return res.send({ message: "User removed from group" });
     } catch (error) {
       return res.status(500).send({ message: "Error writing to file", error });

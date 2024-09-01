@@ -41,15 +41,15 @@ export class GroupService {
   // Add a user to a group
   addUserToGroup(groupId: number, username: string): Observable<Group> {
     return this.httpClient.post<Group>(
-      `${this.apiURL}/api/group/${groupId}/add_user/${username}`,
+      `${this.apiURL}/api/group/${groupId}/user/${username}`,
       {}
     );
   }
 
   // Remove a user from a group
   removeUserFromGroup(groupId: number, username: string): Observable<Group> {
-    return this.httpClient.post<Group>(
-      `${this.apiURL}/api/group/${groupId}/remove_user/${username}`,
+    return this.httpClient.delete<Group>(
+      `${this.apiURL}/api/group/${groupId}/user/${username}`,
       {}
     );
   }

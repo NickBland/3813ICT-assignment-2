@@ -38,6 +38,14 @@
                                         </div>      
                                     </li>
                                 }
+                                @if (isAdmin) {
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-end">
+                                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">Add Users</button>
+                                            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#removeUserModal">Remove Users</button>
+                                        </div>
+                                    </li>
+                                }
                                 </ul>
                             </div>
                         } @else {
@@ -130,5 +138,56 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form [formGroup]="addUserForm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-5" id="addUserModalLabel">Add Users</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <select class="form-control" id="username" formControlName="username">
+                        <option selected disabled>Select a user to add</option>
+                        @for (user of usersToAdd; track user) {
+                            <option [ngValue]=user>{{ user }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" (click)="addUser()" [disabled]="!addUserForm.valid">Add User</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog" aria-labelledby="removeUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form [formGroup]="removeUserForm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-5" id="removeUserModalLabel">Remove Users</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <select class="form-control" id="username" formControlName="username">
+                        <option selected disabled>Select a user to remove</option>
+                        @for (user of usersToRemove; track user) {
+                            <option [ngValue]=user>{{ user }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" (click)="removeUser()" [disabled]="!removeUserForm.valid">Remove User</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>

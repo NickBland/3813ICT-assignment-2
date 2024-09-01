@@ -12,6 +12,8 @@ import {
 } from "@angular/forms";
 import { Modal } from "bootstrap";
 import { firstValueFrom } from "rxjs";
+import { User } from "../user";
+import { UserService } from "../user.service";
 
 @Component({
   selector: "app-group-profile",
@@ -31,15 +33,31 @@ export class GroupProfileComponent implements OnInit {
 
   channelForm: FormGroup;
 
+  users = [] as User[];
+  usersToAdd = [] as string[];
+  usersToRemove = [] as string[];
+  addUserForm: FormGroup;
+  removeUserForm: FormGroup;
+
   constructor(
     private groupService: GroupService,
     private channelService: ChannelService,
+    private userService: UserService,
     private route: ActivatedRoute
   ) {
     // Initialise the channel form, with one form control: channelName
     this.channelForm = new FormGroup({
       channelName: new FormControl("", [Validators.required]),
       channelDescription: new FormControl("", [Validators.required]),
+    });
+
+    // Initialise the other forms
+    this.addUserForm = new FormGroup({
+      username: new FormControl(this.usersToAdd, [Validators.required]),
+    });
+
+    this.removeUserForm = new FormGroup({
+      username: new FormControl(this.usersToRemove, [Validators.required]),
     });
   }
 
@@ -146,7 +164,93 @@ export class GroupProfileComponent implements OnInit {
     this.group.channels = viewableChannels;
   }
 
+  async getUsers(all = false) {
+    // Reset the arrays
+    this.usersToAdd = [];
+    this.usersToRemove = [];
+
+    // Check if the users array needs to be updated with all users
+    if (all) {
+      this.users = await firstValueFrom(this.userService.getUsers());
+    }
+
+    // Determine which users are not in the group, and which ones are
+    for (const user of this.users) {
+      if (user.username !== sessionStorage.getItem("username")) {
+        if (this.group.users.includes(user.username)) {
+          this.usersToRemove.push(user.username);
+        } else {
+          this.usersToAdd.push(user.username);
+        }
+      }
+    }
+  }
+
+  addUser() {
+    this.isLoading = true;
+    // Add the user to the group
+    this.groupService
+      .addUserToGroup(this.groupId ?? 0, this.addUserForm.value.username)
+      .subscribe({
+        next: () => {
+          // Re-get the group to update the user list
+          this.getGroup();
+          this.getUsers();
+          this.addUserForm.reset();
+        },
+        error: (error) => {
+          this.error = error;
+          if (this.error) {
+            if (error.status) {
+              // Get the message from the received API response
+              this.error.message = `${error.status}: ${error.error.message}`;
+            } else {
+              this.error.message = "An unknown error occurred";
+            }
+          }
+          this.isLoading = false;
+        },
+        complete: () => {
+          this.isLoading = false;
+        },
+      });
+  }
+
+  removeUser() {
+    this.isLoading = true;
+    // Remove the user from the group
+    this.groupService
+      .removeUserFromGroup(
+        this.groupId ?? 0,
+        this.removeUserForm.value.username
+      )
+      .subscribe({
+        next: () => {
+          // Re-get the group to update the user list
+          this.getGroup();
+          this.getUsers();
+          this.removeUserForm.reset();
+        },
+        error: (error) => {
+          this.error = error;
+          if (this.error) {
+            if (error.status) {
+              // Get the message from the received API response
+              this.error.message = `${error.status}: ${error.error.message}`;
+            } else {
+              this.error.message = "An unknown error occurred";
+            }
+          }
+          this.isLoading = false;
+        },
+        complete: () => {
+          this.isLoading = false;
+        },
+      });
+  }
+
   getGroup() {
+    this.isLoading = true;
     // Get the user's profile
     if (this.groupId) {
       this.groupService.getGroup(this.groupId).subscribe({
@@ -154,8 +258,9 @@ export class GroupProfileComponent implements OnInit {
           // Set the user object to the received user
           this.group = value;
 
-          this.onlyViewableChannels();
+          this.getUsers(true);
 
+          this.onlyViewableChannels();
           this.getChannelNames();
           this.setAdmin();
         },
