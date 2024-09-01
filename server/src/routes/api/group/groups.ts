@@ -44,6 +44,9 @@ groups.post("/api/group", verifyToken, (req: Request, res: Response) => {
   const id = groups.length ? groups.length + 1 : 1;
   req.body.id = id;
 
+  // Assign an empty array for messages
+  req.body.messages = [];
+
   // Add the user creating the group to the group as both an admin and a user
   // Fetch the user from the token
   const token = req.headers.authorization?.split(" ")[1];
@@ -65,6 +68,9 @@ groups.post("/api/group", verifyToken, (req: Request, res: Response) => {
   // Update the group to contain the user as both an admin and user
   req.body.users = [decoded?.user.username];
   req.body.admins = [decoded?.user.username];
+
+  // And remove the user property from the request body
+  delete req.body.user;
 
   // Add the new group to the groups array
   groups.push(req.body);
@@ -188,6 +194,15 @@ groups.delete("/api/group/:id", verifyToken, (req: Request, res: Response) => {
     console.log(gIndex, roleIndex);
   });
 
+  // Update the channels.json file by removing channels that belong to the group
+  const channels = JSON.parse(fs.readFileSync("./data/channels.json", "utf-8"));
+  channels.forEach((channel: { group: number }) => {
+    if (channel.group === groupId) {
+      const channelIndex = channels.indexOf(channel);
+      channels.splice(channelIndex, 1);
+    }
+  });
+
   // Remove the group from the groups array
   groups.splice(groupIndex, 1);
 
@@ -195,6 +210,7 @@ groups.delete("/api/group/:id", verifyToken, (req: Request, res: Response) => {
   try {
     fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
     fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+    fs.writeFileSync("./data/channels.json", JSON.stringify(channels, null, 2));
     return res.send({
       message: `Group '${req.params.id}' successfully deleted`,
     });

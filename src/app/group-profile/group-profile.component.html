@@ -86,51 +86,51 @@
                                             </div>
                                         </li>
                                     }
-                                    @if (isAdmin) {
-                                        <li class="list-group-item">
-                                            <div class="d-flex justify-content-end">
-                                                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addChannelModal">Add Channel</button>
-                                            </div>
-                                            <div class="modal fade" id="addChannelModal" tabindex="-1" aria-labelledby="addChannelModalLabel" aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <form [formGroup]="channelForm" (submit)="createChannel()">
-                                                            <div class="modal-header">
-                                                            <h1 class="modal-title fs-5" id="addChannelModalLabel">Add Channel</h1>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body"> 
-                                                                <div class="mb-3">
-                                                                    <label for="channelName" class="form-label" >Channel Name</label>
-                                                                    <input type="text" class="form-control" id="channelName" formControlName="channelName">
-                                                                    @if (channelForm.controls['channelName'].invalid && channelForm.controls['channelName'].touched) {
-                                                                        <div class="text-danger">
-                                                                            A channel name is required
-                                                                        </div>
-                                                                    }
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="channelDescription" class="form-label">Description</label>
-                                                                    <input type="text" class="form-control" id="channelDescription" formControlName="channelDescription">
-                                                                    @if (channelForm.controls['channelDescription'].invalid && channelForm.controls['channelDescription'].touched) {
-                                                                        <div class="text-danger">
-                                                                            A channel description is required
-                                                                        </div>
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                                <button type="button submit" class="btn btn-primary" data-bs-dismiss="modal">Save changes</button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    }
                                 } @else {
                                     <li class="list-group-item">No channels</li>
+                                }
+                                @if (isAdmin) {
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-end">
+                                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addChannelModal">Add Channel</button>
+                                        </div>
+                                        <div class="modal fade" id="addChannelModal" tabindex="-1" aria-labelledby="addChannelModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form [formGroup]="channelForm" (submit)="createChannel()">
+                                                        <div class="modal-header">
+                                                        <h1 class="modal-title fs-5" id="addChannelModalLabel">Add Channel</h1>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body"> 
+                                                            <div class="mb-3">
+                                                                <label for="channelName" class="form-label" >Channel Name</label>
+                                                                <input type="text" class="form-control" id="channelName" formControlName="channelName">
+                                                                @if (channelForm.controls['channelName'].invalid && channelForm.controls['channelName'].touched) {
+                                                                    <div class="text-danger">
+                                                                        A channel name is required
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="channelDescription" class="form-label">Description</label>
+                                                                <input type="text" class="form-control" id="channelDescription" formControlName="channelDescription">
+                                                                @if (channelForm.controls['channelDescription'].invalid && channelForm.controls['channelDescription'].touched) {
+                                                                    <div class="text-danger">
+                                                                        A channel description is required
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                            <button type="button submit" class="btn btn-primary" data-bs-dismiss="modal">Save changes</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
                                 }
                             </ul>
                         </div>

@@ -29,8 +29,14 @@ export class GroupService {
   }
 
   // Create a group
-  createGroup(group: Group): Observable<Group> {
-    return this.httpClient.post<Group>(`${this.apiURL}/api/group/`, group);
+  createGroup(group: {
+    name: string;
+    description: string;
+  }): Observable<{ group: Group; authToken: string }> {
+    return this.httpClient.post<{ group: Group; authToken: string }>(
+      `${this.apiURL}/api/group`,
+      group
+    );
   }
 
   // Delete a group

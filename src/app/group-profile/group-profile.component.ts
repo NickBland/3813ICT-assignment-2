@@ -10,7 +10,6 @@ import {
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
-import { Modal } from "bootstrap";
 import { firstValueFrom } from "rxjs";
 import { User } from "../user";
 import { UserService } from "../user.service";
@@ -77,8 +76,6 @@ export class GroupProfileComponent implements OnInit {
 
           // Finally, reset the form, and close the modal
           this.channelForm.reset();
-          const channelModal = new Modal("#channelModal");
-          channelModal.hide();
         },
         error: (error) => {
           this.error = error;

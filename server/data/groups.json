@@ -44,5 +44,17 @@
     "channels": [
       4
     ]
+  },
+  {
+    "name": "Joe Group",
+    "description": "Joe",
+    "id": 4,
+    "users": [
+      "joe"
+    ],
+    "admins": [
+      "joe"
+    ],
+    "channels": []
   }
 ]
