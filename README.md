@@ -22,7 +22,8 @@ Chat me up is my implementation of the 3813ICT Assignment.
   - [4.1 - Components](#41---components)
   - [4.2 - Services](#42---services)
   - [4.3 - Models](#43---models)
-  - [4.4 - Routes](#44---routes)
+  - [4.4 - Guards](#44---guards)
+  - [4.5 - Routes](#45---routes)
 - [5.0 - Node Server Architecture](#50---node-server-architecture)
   - [5.1 - Modules](#51---modules)
   - [5.2 - Functions](#52---functions)
@@ -95,23 +96,25 @@ The objects I mentioned earlier in [Section 3.1](#31---in-general) should be sto
 
 There will be models for the different data structures to be used: including users, groups, and channels. In the future, a message model will need to be created
 
-### 4.4 - Routes
+### 4.4 - Guards
+
+While not explicitely required, I opted to use guards as a way to protect certain routes from unauthorised users. My implementation uses 3 guards, an authGuard for general "are you logged in?", a groupGuard for "are you a member of this channel?", and a channelGuard for "are you a member of this channel?". Unauthorised requests are redirected back to the login page in case anything has gone wrong. But in most cases, the only way to access these "forbidden" routes, would be by manually entering them in to the URL bar. The application currently does guard against accessing these routes through disabling button, or not showing them as being present at all for the case of channels.
+
+### 4.5 - Routes
 
 These are the routes I plan to implement. While this isn't concrete and could change in the final product, it should serve as a good reference point for how I want to design the application to look and feel - that being, quite modular.
 
-| Route                   | Description                                                                                                        |
-|-------------------------|--------------------------------------------------------------------------------------------------------------------|
-| /                       | Should show a simple design on what the application is                                                             |
-| /login                  | A form to allow users to log in                                                                                    |
-| /users                  | A page to view all the user's registered to the application.                                                       |
-| /profile                | A page to view the currently logged in account's information with the ability to update it.                        |
-| /profile/{username}     | A page to view another user's profile, including the groups they are a part of.                                    |
-| /admin                  | Accessible only to Super Admins, gives the ability to administer users, including upgrades, etc.                   |
-| /groups                 | A page to view all the groups available                                                                            |
-| /groups/create          | A page to create a new group, which will then be displayed on the /groups route                                    |
-| /group/{id}             | A page to show information about a group including channels, users, admins, etc. with ability to register interest |
-| /group/{id}/{channelID} | One of the channels a user can interact with in a group                                                            |
-| /group/{id}/admin       | Accessible only by a Super Admin or Group admin allowing administration of the group                               |
+| Route                   | Description                                                                                                                |
+|-------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| /                       | Should show a simple design on what the application is                                                                     |
+| /login                  | A form to allow users to log in                                                                                            |
+| /users                  | A page to view all the user's registered to the application.                                                               |
+| /profile                | A page to view the currently logged in account's information with the ability to update it.                                |
+| /profile/{username}     | A page to view another user's profile, including the groups they are a part of.                                            |
+| /admin                  | Accessible only to Super Admins, gives the ability to administer users, including upgrades, etc.                           |
+| /groups                 | A page to view all the groups available. There is also a button to create a new group                                      |
+| /group/{id}             | A page to show information about a group including channels, users, admins, etc. Group admins can add/remove channels here |
+| /group/{id}/{channelID} | One of the channels a user can interact with in a group. Group admins can add/remove members here                          |
 
 ---
 
@@ -147,4 +150,27 @@ Global variables should rarely, if ever, be used as they create bad habits in wr
 
 ## 6.0 - Server-Side Routes
 
-TBD
+| **Route**                          | **Method** | **Parameters**                   | **Returns**                                                          | **Description**                                                                                                                                                    |
+|------------------------------------|------------|----------------------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|  /api/user                         | GET        | NONE                             | A list of all Users, as User objects                                 | Retrieve all users that have been registered to the application                                                                                                    |
+|  /api/user                         | POST       | body: User object                | A JWT for the new user                                               | Register a new user to the application with the provided user object passed in the body                                                                            |
+|  /api/user/:username               | GET        | username                         | A User object                                                        | Retrieve data about the the user provided                                                                                                                          |
+|  /api/user/:username               | PUT        | username, body: User object      | An updated JWT for the user                                          | Update data for a given user with the provided user object. Only updates fields provided, and keeps everything else the same                                       |
+|  /api/user/:username               | DELETE     | username                         | A Success or error message                                           | Delete a user, given the username provided. Request must be authorised by either a super user, or the user trying to delete their own profile.                     |
+|  /api/user/login                   | POST       | body: username, password         | A JWT for the logged in user                                         | Authenticate a user given their username and password with a JWT that does not expire.                                                                             |
+|  /api/user/refresh                 | PATCH      | body: JWT                        | An updated JWT for the user                                          | Refresh a given JWT with all new data that has been registered (new groups, channels, roles, etc. are in the JWT)                                                  |
+|  /api/group                        | GET        | NONE                             | A list of all Groups, as Group objects                               | Retrieve all groups that have been registered to the application                                                                                                   |
+|  /api/group                        | POST       | body: name, description          | A group object for the new group, and an updated JWT for the creator | Register a new group to the application. The user making the post request is set as the user and group admin                                                       |
+|  /api/group/:id                    | GET        | groupID                          | A group object                                                       | Retrieve data about the group provided                                                                                                                             |
+|  /api/group/:id                    | PUT        | groupID, body: name, description | The updated group object                                             | Update data for a given group with the provided name and description. Only fields provided are adjusted, everything else remains the same.                         |
+|  /api/group/:id                    | DELETE     | groupID                          | A Success or error message                                           | Delete a group, given the groupID provided. Request must be authorised by either a group admin or super user                                                       |
+|  /api/group/:id/user/:username     | POST       | groupID, username                | The updated group object and updated JWT for the user being added    | Add a user as a member of the group.                                                                                                                               |
+|  /api/group/:id/user/:username     | DELETE     | groupID, username                | A Success or error message                                           | Remove a user from a group                                                                                                                                         |
+|  /api/channels/:group              | GET        | groupID (or 0 for all)           | A list of all Channels for a group, as Channel objects               | Retrieve all channels that have been registered for a particular group. Or if the group number provided is 0, retrieve all channels registered to the application. |
+|  /api/channel/:channel             | GET        | channelID                        | A channel object                                                     | Retrieve data about a specific channel, given the channel ID                                                                                                       |
+|  /api/channel/:group               | POST       | groupID, body: name, description | A channel object                                                     | Add a new channel to a particular group with the provided name and description                                                                                     |
+|  /api/channel/:group               | PUT        | groupID, body: name, description | The updated channel object                                           | Update data for a given channel with the provided name and description. Only fields provided are adjusted, everything else remains the same.                       |
+|  /api/channel/:group               | DELETE     | groupID                          | A Success or error message                                           | Remove a channel from the application (and group). Request must be authorised by either a group admin or super user.                                               |
+|  /api/channel/:channelID/:username | POST       | channelID, username              | A Success or error message                                           | Add a user as a member of the channel                                                                                                                              |
+|  /api/channel/:channelID/:username | DELETE     | channelID, username              | A Success or error message                                           | Remove a user as a member of the channel                                                                                                                           |
+|  /api/channel/:channelID/:username | GET        | channelID, username              | True or False                                                        | Retrieve whether a given user is a member of the channel                                                                                                           |
