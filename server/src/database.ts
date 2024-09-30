@@ -49,7 +49,7 @@ export const reset = async (db: Db) => {
 
     // Create a super user
     await db.collection("users").insertOne({
-      username: "superuser",
+      username: "super",
       password: "123",
       email: "super@super.com",
       name: "Super Admin",
