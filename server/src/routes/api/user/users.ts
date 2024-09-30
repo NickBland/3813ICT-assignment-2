@@ -1,6 +1,9 @@
 import express, { Request, Response, Router } from "express";
 import fs from "fs";
 import jwt from "jsonwebtoken";
+import User from "../../../models/user";
+import Group from "../../../models/group";
+import Channel from "../../../models/channel";
 import "dotenv/config";
 
 export const users: Router = express.Router(); // Export the users router
@@ -25,10 +28,19 @@ function verifyToken(req: Request, res: Response, next: () => void) {
 }
 
 // Get all the users (without password) from the users.json file
-users.get("/api/user", verifyToken, (_req: Request, res: Response) => {
-  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+users.get("/api/user", verifyToken, async (_req: Request, res: Response) => {
+  const db = _req.db;
 
-  users.forEach((user?: { password?: string }) => {
+  if (!db) {
+    return res.status(500).send("Database not available");
+  }
+
+  const collection = db.collection<User>("users");
+
+  const users = (await collection.find().toArray()) as User[];
+
+  users.forEach((user?: { _id?: string; password?: string }) => {
+    delete user?._id; // Remove the _id from the response
     delete user?.password; // Remove the password from the response
   });
 
@@ -36,28 +48,52 @@ users.get("/api/user", verifyToken, (_req: Request, res: Response) => {
 });
 
 // Create a new user
-users.post("/api/user", (req: Request, res: Response) => {
-  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+users.post("/api/user", async (req: Request, res: Response) => {
+  const db = req.db;
 
-  // Check that the username and email are unique
+  if (!db) {
+    return res.status(500).send("Database not available");
+  }
+
+  const collection = db.collection<User>("users");
+
+  // Check that all required fields are present
   if (
-    users.find(
-      (user: { username: string }) => user.username === req.body.username
-    )
+    !req.body.username ||
+    !req.body.password ||
+    !req.body.email ||
+    !req.body.name
   ) {
+    return res.status(400).send({ message: "Invalid request" });
+  }
+
+  // Check that the username is unique
+  const user = await collection.findOne({ username: req.body.username });
+
+  if (user) {
     return res.status(409).send({ message: "Username already exists" });
   }
 
-  if (users.find((user: { email: string }) => user.email === req.body.email)) {
+  // Check that the email is unique
+  const email = await collection.findOne({ email: req.body.email });
+
+  if (email) {
     return res.status(409).send({ message: "Email already exists" });
   }
 
-  // Add the new user to the users array
-  users.push(req.body);
+  // Createa a new user object
+  const newUser: User = {
+    username: req.body.username,
+    password: req.body.password,
+    email: req.body.email,
+    name: req.body.name,
+    roles: req.body.roles || [],
+    groups: req.body.groups || [],
+  };
 
-  // Write the updated users array back to the file
+  // Write the new user object to the database
   try {
-    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+    await collection.insertOne(newUser);
   } catch (error) {
     return res.status(500).send({ message: "Error creating user", error });
   }
@@ -69,99 +105,130 @@ users.post("/api/user", (req: Request, res: Response) => {
 });
 
 // Get a single user by username (without password) from the users.json file
-users.get("/api/user/:username", verifyToken, (req: Request, res: Response) => {
-  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+users.get(
+  "/api/user/:username",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-  const user = users.find(
-    (user: { username: string }) => user.username === req.params.username
-  );
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
 
-  if (!user) {
-    return res.status(404).send({ message: "User not Found" });
+    const collection = db.collection<User>("users");
+
+    const user = await collection.findOne(
+      { username: req.params.username },
+      { projection: { password: 0, _id: 0 } } // Exclude password and _id from the response
+    );
+
+    if (!user) {
+      return res.status(404).send({ message: "User not Found" });
+    }
+
+    return res.send(user);
   }
-
-  delete user.password; // Remove the password from the response
-  return res.send(user);
-});
+);
 
 // Update a user's profile
-users.put("/api/user/:username", verifyToken, (req: Request, res: Response) => {
-  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+users.put(
+  "/api/user/:username",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-  const user = users.find(
-    (user: { username: string }) => user.username === req.params.username
-  );
-
-  if (!user) {
-    return res.status(404).send({ message: "User not Found" });
-  }
-
-  // Check if the user is trying to update their own profile
-  // Do this by comparing the username in the JWT token with the username on file.
-  const token = req.headers.authorization?.split(" ")[1];
-  const decoded = jwt.decode(token as string) as jwt.JwtPayload; // TS type assertion since decode returns unknown
-
-  // Check that the username in the JWT token matches the username in the URL
-  if (decoded?.user.username !== req.params.username) {
-    return res.status(403).send({ message: "Forbidden" });
-  }
-
-  // Check that the username being updated is unique (if it is being updated)
-  if (
-    users.find(
-      (user: { username: string }) => user.username === req.body.username
-    ) &&
-    req.body.username !== user.username
-  ) {
-    return res.status(409).send({ message: "Username already exists" });
-  }
-
-  // Check that the email being updated is unique (if it is being updated)
-  if (
-    users.find((user: { email: string }) => user.email === req.body.email) &&
-    req.body.email !== user.email
-  ) {
-    return res.status(409).send({ message: "Email already exists" });
-  }
-
-  // Overwrite the user object with the new data, not adding any new properties
-  // (Some new properties like iat and exp are added by the JWT token)
-  // Also ensure that the user object is not overwritten with empty data
-  Object.keys(req.body).forEach((key) => {
-    if (Object.keys(user).includes(key) && req.body[key] !== "") {
-      user[key] = req.body[key];
+    if (!db) {
+      return res.status(500).send("Database not available");
     }
-  });
 
-  // Overwrite the user object in the users array
-  const index = users.findIndex(
-    (user: { username: string }) => user.username === req.params.username
-  );
-  users[index] = user;
+    const collection = db.collection<User>("users");
 
-  // Write the updated users array back to the file
-  try {
-    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
-  } catch (error) {
-    return res.status(500).send({ message: "Error updating user", error });
+    const user = await collection.findOne({ username: req.params.username });
+    const users = await collection.find().toArray();
+
+    if (!user) {
+      return res.status(404).send({ message: "User not Found" });
+    }
+
+    // Check if the user is trying to update their own profile
+    // Do this by comparing the username in the JWT token with the username on file.
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload; // TS type assertion since decode returns unknown
+
+    // Check that the username in the JWT token matches the username in the URL
+    if (decoded?.user.username !== req.params.username) {
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
+    // Check that the username being updated to is unique (if it is being updated)
+    if (
+      users.find(
+        (user: { username: string }) => user.username === req.body.username
+      ) &&
+      req.body.username !== user.username
+    ) {
+      return res.status(409).send({ message: "Username already exists" });
+    }
+
+    // Check that the email being updated is unique (if it is being updated)
+    if (
+      users.find((user: { email: string }) => user.email === req.body.email) &&
+      req.body.email !== user.email
+    ) {
+      return res.status(409).send({ message: "Email already exists" });
+    }
+
+    // Create required parameters for the update
+    const filter = { username: req.params.username };
+    const updatedUser = {
+      $set: {
+        username: req.body.username || user.username,
+        password: req.body.password || user.password,
+        email: req.body.email || user.email,
+        name: req.body.name || user.name,
+        roles: req.body.roles || user.roles,
+        groups: req.body.groups || user.groups,
+      },
+    };
+    const options = { upsert: false }; // Do NOT create a new document if it doesn't exist, error instead
+
+    // Write the updated user object back to the database
+    try {
+      await collection.updateOne(filter, updatedUser, options);
+    } catch (error) {
+      return res.status(500).send({ message: "Error updating user", error });
+    }
+
+    // Get the new user object from the database
+    const updated = await collection
+      .findOne(
+        { username: updatedUser.$set.username },
+        { projection: { password: 0, _id: 0 } } // Exclude password and _id from the response
+      )
+      .then((user) => {
+        user!.loggedIn = true; // Add the loggedIn property to the user object
+        user!.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
+        return user;
+      });
+
+    return res.send(updated);
   }
-
-  delete user.password; // Remove the password property from the response
-  user.loggedIn = true; // Add the loggedIn property to the user object
-  user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
-  return res.send(user);
-});
+);
 
 // Delete a user by username
 users.delete(
   "/api/user/:username",
   verifyToken,
-  (req: Request, res: Response) => {
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-    const user = users.find(
-      (user: { username: string }) => user.username === req.params.username
-    );
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const collection = db.collection<User>("users");
+
+    const user = await collection.findOne({ username: req.params.username });
 
     if (!user) {
       return res.status(404).send({ message: "User not Found" });
@@ -180,37 +247,25 @@ users.delete(
       return res.status(403).send({ message: "Forbidden" });
     }
 
-    // Remove the user object from the users array
-    const index = users.findIndex(
-      (user: { username: string }) => user.username === req.params.username
-    );
-    users.splice(index, 1);
-
-    // Remove the user from any groups they were a user or admin of
-    // If there are then no users in a group, the super user will be added
-    const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
-    groups.forEach((group: { users: string[]; admins: string[] }) => {
-      const userIndex = group.users.indexOf(req.params.username);
-      if (userIndex !== -1) {
-        group.users.splice(userIndex, 1);
-        if (group.users.length === 0) {
-          group.users.push("super");
-        }
-      }
-
-      const adminIndex = group.admins.indexOf(req.params.username);
-      if (adminIndex !== -1) {
-        group.admins.splice(adminIndex, 1);
-        if (group.admins.length === 0) {
-          group.admins.push("super");
-        }
-      }
-    });
-
-    // Write the updated users array back to the file
+    // Remove the user object from the database
     try {
-      fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
-      fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
+      await collection.deleteOne({ username: req.params.username });
+    } catch (error) {
+      return res.status(500).send({ message: "Error deleting user", error });
+    }
+
+    // Remove references to the user from any groups they were a user or admin of
+    const groups = db.collection<Group>("groups");
+    const channels = db.collection<Channel>("channels");
+
+    // Attempt removal by pulling the user value from the arrays
+    try {
+      await groups.updateMany(
+        {},
+        { $pull: { users: req.params.username, admins: req.params.username } }
+      );
+
+      await channels.updateMany({}, { $pull: { users: req.params.username } });
     } catch (error) {
       return res.status(500).send({ message: "Error deleting user", error });
     }
@@ -222,26 +277,44 @@ users.delete(
 );
 
 // Refresh the JWT token for the user
-users.patch("/api/user/refresh", verifyToken, (req: Request, res: Response) => {
-  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+users.patch(
+  "/api/user/refresh",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-  // Ensure that the user updating the token is the same as the user in the JWT token
-  const token = req.headers.authorization?.split(" ")[1];
-  const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
 
-  if (decoded?.user.username !== req.body.username) {
-    return res.status(403).send({ message: "Forbidden" });
+    const collection = db.collection<User>("users");
+
+    const users = await collection
+      .find(
+        {},
+        {
+          projection: { password: 0, _id: 0 }, // Exclude password and _id from the response
+        }
+      )
+      .toArray();
+
+    // Ensure that the user updating the token is the same as the user in the JWT token
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+
+    if (decoded?.user.username !== req.body.username) {
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
+    const user = users.find(
+      (user: { username: string }) => user.username === req.body.username
+    );
+
+    if (!user) {
+      return res.status(404).send({ message: "User not Found" });
+    }
+
+    user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
+    return res.send(user);
   }
-
-  const user = users.find(
-    (user: { username: string }) => user.username === req.body.username
-  );
-
-  if (!user) {
-    return res.status(404).send({ message: "User not Found" });
-  }
-
-  delete user.password; // Remove the password property from the response
-  user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
-  return res.send(user);
-});
+);
