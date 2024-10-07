@@ -70,7 +70,7 @@ export const reset = async (db: Db) => {
     // Create a group
     await db.collection("groups").insertOne({
       id: 1,
-      name: "Group 1 - Default",
+      name: "Group 1",
       description: "Description 1!",
       users: ["super", "joe"],
       admins: ["super"],
