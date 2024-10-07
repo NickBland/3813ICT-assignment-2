@@ -22,7 +22,10 @@ connect()
     console.log("Connected to the database!");
 
     ///// RESET DATABASE /////
-    await reset(db);
+    if (process.argv.includes("-r")) {
+      console.log("\x1b[34m Resetting the database... \x1b[0m");
+      await reset(db);
+    }
 
     ///// MIDDLEWARE TO ATTACH DB TO REQUEST /////
     app.use((req, res, next) => {
@@ -35,8 +38,11 @@ connect()
 
     ///// START SERVER /////
     app.listen(PORT, () => {
-      console.log("Express server initialised!");
-      console.log("Server listening on http://localhost:%s", PORT);
+      console.log("\x1b[32m Express server initialised! \x1b[0m");
+      console.log(
+        "\x1b[33m Server listening on http://localhost:%s \x1b[0m",
+        PORT
+      );
     });
   })
   .catch((error) => {

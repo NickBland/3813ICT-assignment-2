@@ -30,6 +30,15 @@ export const connect = async () => {
       })
     );
 
+    // Check if the super user exists, if not, reset the database
+    const userCollection = db.collection("users");
+    const superUser = await userCollection.findOne({ username: "super" });
+
+    if (!superUser) {
+      console.log("\x1b[43m Malformed database, resetting... \x1b[0m");
+      await reset(db);
+    }
+
     return db;
   } catch (error) {
     console.error("Failed to connect to the database:", error);
@@ -96,7 +105,7 @@ export const reset = async (db: Db) => {
       messages: [],
     });
 
-    console.log("Database reset successfully!");
+    console.log("\x1b[42m Database reset successfully! \x1b[0m");
   } catch (error) {
     console.error("Failed to reset the database:", error);
     throw error;
