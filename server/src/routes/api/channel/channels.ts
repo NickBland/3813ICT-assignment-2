@@ -40,7 +40,7 @@ channels.get(
 
     const selectedGroup = Number(req.params.group);
 
-    const groupCollection = db.collection<Group>("groups");
+    const groups = db.collection<Group>("groups");
     const channelCollection = db.collection<Channel>("channels");
 
     // Return all channels if the group ID is 0
@@ -50,7 +50,7 @@ channels.get(
     }
 
     // Check if the group exists
-    const group = (await groupCollection.findOne({
+    const group = (await groups.findOne({
       id: selectedGroup,
     })) as Group;
 
