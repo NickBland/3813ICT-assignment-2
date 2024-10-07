@@ -3,5 +3,12 @@ import express, { Request, Response, Router } from "express";
 export const healthcheck: Router = express.Router(); // Export the router instance
 
 healthcheck.get("/healthcheck", (req: Request, res: Response) => {
-  res.sendStatus(200);
+
+  const db = req.db;
+
+  if (!db) {
+    return res.status(500).send("Database not available");
+  } else {
+    res.sendStatus(200);
+  }
 });

@@ -24,7 +24,10 @@ login.post("/api/user/login", async (req: Request, res: Response) => {
   const secret = process.env.JWT_SECRET || "defaultSecret";
 
   const collection = db.collection("users");
-  const user = await collection.findOne({ username: receivedData.username });
+  const user = await collection.findOne(
+    { username: receivedData.username },
+    { projection: { _id: 0 } }
+  );
 
   // If user object does not exist, return 401. Otherwise, return the user data (NOT PASSWORD)
   if (!user || user.password !== receivedData.password) {

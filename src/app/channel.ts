@@ -2,6 +2,7 @@ export interface Channel {
   // Optional properties are used since the server will assign the ID and group automatically
   // These properties are not required when creating a new channel
   id?: number;
+  _id?: string;
   name: string;
   description: string;
   group?: number;

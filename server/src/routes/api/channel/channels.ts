@@ -1,6 +1,8 @@
 import express, { Request, Response, Router } from "express";
-import fs from "fs";
 import jwt from "jsonwebtoken";
+import User from "../../../models/user";
+import Group from "../../../models/group";
+import Channel from "../../../models/channel";
 import "dotenv/config";
 
 export const channels: Router = express.Router(); // Export the channels router
@@ -29,23 +31,28 @@ function verifyToken(req: Request, res: Response, next: () => void) {
 channels.get(
   "/api/channels/:group",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
     const selectedGroup = Number(req.params.group);
 
-    const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
+    const groups = db.collection<Group>("groups");
+    const channelCollection = db.collection<Channel>("channels");
 
     // Return all channels if the group ID is 0
     if (selectedGroup === 0) {
-      const channels = JSON.parse(
-        fs.readFileSync("./data/channels.json", "utf-8")
-      );
+      const channels = (await channelCollection.find().toArray()) as Channel[];
       return res.send(channels);
     }
 
     // Check if the group exists
-    const group = groups.find((group: { id: number }) => {
-      return group.id === selectedGroup;
-    });
+    const group = (await groups.findOne({
+      id: selectedGroup,
+    })) as Group;
 
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
@@ -59,17 +66,21 @@ channels.get(
 channels.get(
   "/api/channel/:channel",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
     const selectedChannel = Number(req.params.channel);
 
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
-    );
+    const collection = db.collection<Channel>("channels");
 
     // Check if the channel exists
-    const channel = channels.find((channel: { id: number }) => {
-      return channel.id === selectedChannel;
-    });
+    const channel = (await collection.findOne({
+      id: selectedChannel,
+    })) as Channel;
 
     if (!channel) {
       return res.status(404).send({ message: "Channel not found" });
@@ -83,31 +94,40 @@ channels.get(
 channels.post(
   "/api/channel/:group",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     // Create a new channel object from the request body (name, description)
-    const newChannel = {
-      id: 0,
-      name: req.body.name,
-      description: req.body.description,
-      group: 0,
-      users: [] as string[],
-      messages: [] as string[],
-    };
-
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
+    const newChannel = new Channel(
+      req.body.name,
+      req.body.description,
+      0,
+      [] as string[],
+      [] as []
     );
+
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const channelCollection = db.collection<Channel>("channels");
+    const groupCollection = db.collection<Group>("groups");
+
+    // Check if the group exists
+    const group = (await groupCollection.findOne({
+      id: Number(req.params.group),
+    })) as Group;
+
+    if (!group) {
+      return res.status(404).send({ message: "Group not found" });
+    }
 
     // Check if the channel already exists within the group provided
     // Assign all channels that are part of the group to the groupChannels variable
-    const groupChannels = channels.filter(
-      (channel: { group: number }) => channel.group === Number(req.params.group)
-    );
-
-    // Check if the channel already exists within the group
-    const channel = groupChannels.find(
-      (channel: { name: string }) => channel.name === newChannel.name
-    );
+    const channel = (await channelCollection.findOne({
+      name: newChannel.name,
+      group: Number(req.params.group),
+    })) as Channel;
 
     if (channel) {
       return res.status(409).send({ message: "Channel already exists" });
@@ -116,43 +136,41 @@ channels.post(
     // Assign the user that created the channel to the channel (from the JWT token)
     const token = req.headers.authorization?.split(" ")[1];
     const decoded = jwt.decode(token as string) as jwt.JwtPayload;
-    newChannel.users.push(decoded?.user.username);
+    newChannel.users!.push(decoded?.user.username);
 
-    // Assign the new channel an ID
-    newChannel.id = channels.length ? channels.length + 1 : 1;
+    // Assign the new channel an ID by finding the $max of the id field and adding 1
+    const channels = await channelCollection
+      .find({}, { projection: { _id: 0, id: 1 } }) // Select only the id field
+      .sort({ id: -1 }) // Sort in descending order
+      .limit(1); // Only return the first value (the highest id)
 
-    // Check that the group exists
-    const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
-    const group = groups.find((group: { id: number }) => {
-      return group.id === Number(req.params.group);
-    });
-
-    if (!group) {
-      return res.status(404).send({ message: "Group not found" });
+    // If there are no channels, set the id to 1
+    if (!(await channels.hasNext())) {
+      newChannel.id = 1;
+    } else {
+      // Otherwise, set the id to the highest id + 1
+      newChannel.id = (await channels.next())!.id! + 1;
     }
 
     // Assign the channel to the group (channel-side)
     newChannel.group = Number(req.params.group);
 
-    // And assign the channel to the group (group-side)
-    group.channels.push(newChannel.id);
-
-    channels.push(newChannel);
-
-    // Final check to make sure the channel and id are not 0 (something went wrong)
-    if (newChannel.id === 0 || newChannel.group === 0) {
-      return res.status(500).send({ message: "Error creating channel" });
-    }
-
+    // Attempt to write the changes back to the database
     try {
-      fs.writeFileSync(
-        "./data/channels.json",
-        JSON.stringify(channels, null, 2)
+      await channelCollection.insertOne(newChannel); // Add the new channel
+
+      // Update the group to include the new channel
+      group.channels.push(newChannel.id!);
+      await groupCollection.updateOne(
+        { id: Number(req.params.group) },
+        { $set: { channels: group.channels } }
       );
-      fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
+
       return res.send({ channel: newChannel });
     } catch (error) {
-      return res.status(500).send({ message: "Error writing to file", error });
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
     }
   }
 );
@@ -161,50 +179,49 @@ channels.post(
 channels.delete(
   "/api/channel/:channelID",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const selectedChannel = Number(req.params.channelID);
 
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
-    );
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const channelCollection = db.collection<Channel>("channels");
+    const groupCollection = db.collection<Group>("groups");
 
     // Check if the channel exists
-    const channel = channels.find(
-      (channel: { id: number }) => channel.id === selectedChannel
-    );
+    const channel = (await channelCollection.findOne({
+      id: selectedChannel,
+    })) as Channel;
 
     if (!channel) {
       return res.status(404).send({ message: "Channel not found" });
     }
 
-    // Remove the channel from the channels list
-    const newChannelsList = channels.filter(
-      (channel: { id: number }) => channel.id !== selectedChannel
-    );
+    // Get the group that the channel is part of
+    const group = (await groupCollection.findOne({
+      id: channel.group,
+    })) as Group;
+    group.channels = group.channels.filter((id) => id !== selectedChannel);
 
-    // Remove the channel from the group
-    const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
-
-    // Find the group that the channel belongs to
-    const group = groups.find(
-      (group: { id: number }) => group.id === channel.group
-    );
-
-    // Remove the channel from the group
-    group.channels = group.channels.filter(
-      (channelId: number) => channelId !== channel.id
-    );
-
-    // Update both files
+    // Attempt to write changes to the database
     try {
-      fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
-      fs.writeFileSync(
-        "./data/channels.json",
-        JSON.stringify(newChannelsList, null, 2)
+      // Remove the channel from the database
+      await channelCollection.deleteOne({ id: selectedChannel });
+
+      // Remove the channel from the group
+      await groupCollection.updateOne(
+        { id: group.id },
+        { $set: { channels: group.channels } }
       );
+
       return res.send({ message: "Channel deleted" });
     } catch (error) {
-      return res.status(500).send({ message: "Error writing to file", error });
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
     }
   }
 );
@@ -213,20 +230,38 @@ channels.delete(
 channels.put(
   "/api/channel/:channelID",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const selectedChannel = Number(req.params.channelID);
 
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
-    );
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const channelCollection = db.collection<Channel>("channels");
 
     // Check if the channel exists
-    const channel = channels.find(
-      (channel: { id: number }) => channel.id === selectedChannel
-    );
+    const channel = (await channelCollection.findOne({
+      id: selectedChannel,
+    })) as Channel;
 
     if (!channel) {
       return res.status(404).send({ message: "Channel not found" });
+    }
+
+    // Fetch all channels from the group
+    const channels = await channelCollection
+      .find({ group: channel.group })
+      .toArray();
+
+    // Check if the new name is already in use
+    const nameExists = channels.some(
+      (channel: Channel) => channel.name === req.body.name
+    );
+
+    if (nameExists) {
+      return res.status(409).send({ message: "Channel name already in use" });
     }
 
     // Update the channel's information with the new information (only if it's provided)
@@ -238,15 +273,17 @@ channels.put(
       channel.description = req.body.description;
     }
 
-    // Update the channels file
+    // Update the database to reflect changes
     try {
-      fs.writeFileSync(
-        "./data/channels.json",
-        JSON.stringify(channels, null, 2)
+      await channelCollection.updateOne(
+        { id: selectedChannel },
+        { $set: { name: channel.name, description: channel.description } }
       );
       return res.send({ channel });
     } catch (error) {
-      return res.status(500).send({ message: "Error writing to file", error });
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
     }
   }
 );
@@ -255,45 +292,66 @@ channels.put(
 channels.post(
   "/api/channel/:channelID/:username",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const selectedChannel = Number(req.params.channelID);
     const username = req.params.username;
 
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
-    );
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const channels = db.collection<Channel>("channels");
+    const users = db.collection<User>("users");
 
     // Check if the channel exists
-    const channel = channels.find(
-      (channel: { id: number }) => channel.id === selectedChannel
-    );
+    const channel = (await channels.findOne({
+      id: selectedChannel,
+    })) as Channel;
 
     if (!channel) {
       return res.status(404).send({ message: "Channel not found" });
     }
 
     // Check if the user exists
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    const user = users.find((user: { username: string }) => {
-      return user.username === username;
-    });
+    const user = (await users.findOne({
+      username: username,
+    })) as User;
 
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
 
-    // Add the user to the channel
-    channel.users.push(username);
+    // Check if the user is already in the channel
+    if (channel.users?.includes(username)) {
+      return res.status(409).send({ message: "User already in channel" });
+    }
 
-    // Update the channels file
+    // Check if the user is part of the group that the channel is in
+    const groups = db.collection<Group>("groups");
+    const group = (await groups.findOne({
+      id: channel.group,
+    })) as Group;
+
+    if (!group.users.includes(username)) {
+      return res.status(403).send({ message: "User not in group" });
+    }
+
+    // Add the user to the channel
+    channel.users!.push(username);
+
+    // Update the database
     try {
-      fs.writeFileSync(
-        "./data/channels.json",
-        JSON.stringify(channels, null, 2)
+      await channels.updateOne(
+        { id: selectedChannel },
+        { $set: { users: channel.users } }
       );
       return res.send({ message: "User added to channel" });
     } catch (error) {
-      return res.status(500).send({ message: "Error writing to file", error });
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
     }
   }
 );
@@ -302,47 +360,56 @@ channels.post(
 channels.delete(
   "/api/channel/:channelID/:username",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const selectedChannel = Number(req.params.channelID);
     const username = req.params.username;
 
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
-    );
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const channels = db.collection<Channel>("channels");
+    const users = db.collection<User>("users");
 
     // Check if the channel exists
-    const channel = channels.find(
-      (channel: { id: number }) => channel.id === selectedChannel
-    );
+    const channel = (await channels.findOne({
+      id: selectedChannel,
+    })) as Channel;
 
     if (!channel) {
       return res.status(404).send({ message: "Channel not found" });
     }
 
     // Check if the user exists
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    const user = users.find((user: { username: string }) => {
-      return user.username === username;
-    });
+    const user = (await users.findOne({
+      username: username,
+    })) as User;
 
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
 
-    // Remove the user from the channel
-    channel.users = channel.users.filter(
-      (channelUser: string) => channelUser !== username
-    );
+    // Check if the user is in the channel
+    if (!channel.users?.includes(username)) {
+      return res.status(404).send({ message: "User not in channel" });
+    }
 
-    // Update the channels file
+    // Remove the user from the channel
+    channel.users = channel.users?.filter((user) => user !== username);
+
+    // Update the database
     try {
-      fs.writeFileSync(
-        "./data/channels.json",
-        JSON.stringify(channels, null, 2)
+      await channels.updateOne(
+        { id: selectedChannel },
+        { $set: { users: channel.users } }
       );
       return res.send({ message: "User removed from channel" });
     } catch (error) {
-      return res.status(500).send({ message: "Error writing to file", error });
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
     }
   }
 );
@@ -351,35 +418,39 @@ channels.delete(
 channels.get(
   "/api/channel/:channelID/:username",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const selectedChannel = Number(req.params.channelID);
     const username = req.params.username;
 
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
-    );
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database");
+    }
+
+    const channels = db.collection<Channel>("channels");
+    const users = db.collection<User>("users");
 
     // Check if the channel exists
-    const channel = channels.find(
-      (channel: { id: number }) => channel.id === selectedChannel
-    );
+    const channel = (await channels.findOne({
+      id: selectedChannel,
+    })) as Channel;
 
     if (!channel) {
       return res.status(404).send({ message: "Channel not found" });
     }
 
     // Check if the user exists
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    const user = users.find((user: { username: string }) => {
-      return user.username === username;
-    });
+    const user = (await users.findOne({
+      username: username,
+    })) as User;
 
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
 
     // Check if the user is in the channel
-    const inChannel = channel.users.includes(username);
+    const inChannel = channel.users!.includes(username);
 
     return res.send(inChannel);
   }
