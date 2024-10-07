@@ -1,5 +1,8 @@
 import express, { Request, Response, Router } from "express";
 import fs from "fs";
+import User from "../../../models/user";
+import Group from "../../../models/group";
+import Channel from "../../../models/channel";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
@@ -25,230 +28,283 @@ function verifyToken(req: Request, res: Response, next: () => void) {
 }
 
 // Get all the groups from the groups.json file
-groups.get("/api/group", verifyToken, (_req: Request, res: Response) => {
-  const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
+groups.get("/api/group", verifyToken, async (_req: Request, res: Response) => {
+  const db = _req.db;
+
+  if (!db) {
+    return res.status(500).send("Database not available");
+  }
+
+  const collection = db.collection<Group>("groups");
+
+  const groups = (await collection.find().toArray()) as Group[];
 
   return res.send(groups);
 });
 
 // Create a new group
-groups.post("/api/group", verifyToken, (req: Request, res: Response) => {
-  const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
+groups.post("/api/group", verifyToken, async (req: Request, res: Response) => {
+  const db = req.db;
+
+  if (!db) {
+    return res.status(500).send("Database not available");
+  }
+
+  const groupCollection = db.collection<Group>("groups");
+  const userCollection = db.collection<User>("users");
 
   // Check that the group name is unique
-  if (groups.find((group: { name: string }) => group.name === req.body.name)) {
+  const group = (await groupCollection.findOne({
+    name: req.body.name,
+  })) as Group;
+
+  if (group) {
     return res.status(409).send({ message: "Group name already exists" });
   }
 
-  // Assign an ID to the new group
-  const id = groups.length ? groups.length + 1 : 1;
-  req.body.id = id;
+  // Create new group object
+  const newGroup = new Group(
+    0,
+    req.body.name,
+    req.body.description,
+    [] as string[],
+    [] as string[],
+    [] as number[]
+  );
+
+  // Assign an ID to the new group by fetching the highest ID from the existing groups
+  const highestID = await groupCollection
+    .find({}, { projection: { _id: 0, id: 1 } }) // Select only the id field
+    .sort({ id: -1 }) // Sort in descending order
+    .limit(1); // Only return the first value (the highest id)
+
+  // If there are no channels, set the id to 1
+  if (!(await highestID.hasNext())) {
+    newGroup.id = 1;
+  } else {
+    // Otherwise, set the id to the highest id + 1
+    newGroup.id = (await highestID.next())!.id! + 1;
+  }
 
   // Add the user creating the group to the group as both an admin and a user
   // Fetch the user from the token
   const token = req.headers.authorization?.split(" ")[1];
   const decoded = jwt.decode(token as string) as jwt.JwtPayload;
 
-  // Update the users.json file with the new group
-  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-  const user = users.find(
-    (user: { username: string }) => user.username === decoded?.user.username
-  );
+  // Update the user to contain the new group
+  const user = (await userCollection.findOne(
+    { username: decoded?.user.username },
+    { projection: { password: 0, _id: 0 } } // Exclude password and _id from the response
+  )) as User;
 
   if (!user) {
     return res.status(404).send({ message: "User not found" });
   }
 
-  user.groups.push(req.body.name);
-  user.roles.push(id + "-admin");
+  // Add the group to the user's groups
+  user.groups.push(newGroup.name);
+  user.roles.push(newGroup.id + "-admin");
 
   // Update the group to contain the user as both an admin and user, and an empty messages array
-  req.body.users = [decoded?.user.username];
-  req.body.admins = [decoded?.user.username];
-  req.body.channels = [] as string[];
+  newGroup.users = [decoded?.user.username];
+  newGroup.admins = [decoded?.user.username];
 
-  // And remove the user property from the request body
-  delete req.body.user;
-
-  // Add the new group to the groups array
-  groups.push(req.body);
-
-  // Write the updated groups array back to the file
+  // Attempt to write the changes to the database
   try {
-    fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
-    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
-    delete user.password; // Remove the password property from the response
+    await groupCollection.insertOne(newGroup);
+    await userCollection.updateOne(
+      { username: decoded?.user.username },
+      { $set: { groups: user.groups, roles: user.roles } }
+    );
+
     user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
-    return res.send({ group: req.body, authToken: user.authToken });
+    return res.send({ group: newGroup, authToken: user.authToken });
   } catch (error) {
-    return res.status(500).send({ message: "Error writing to file", error });
+    return res
+      .status(500)
+      .send({ message: "Error writing to database", error });
   }
 });
 
 // Update a group by ID
-groups.put("/api/group/:id", verifyToken, (req: Request, res: Response) => {
-  const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
-  let groupId: number;
+groups.put(
+  "/api/group/:id",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-  // Find the group by ID
-  try {
-    groupId = Number(req.params.id);
-  } catch (error) {
-    return res.status(400).send({ message: "Invalid group ID", error });
-  }
-  const group = groups.find((group: { id: number }) => group.id === groupId);
-
-  if (!group) {
-    return res.status(404).send({ message: "Group not found" });
-  }
-
-  // Check that the user is an admin of the group, or a super user
-  const token = req.headers.authorization?.split(" ")[1];
-  const decoded = jwt.decode(token as string) as jwt.JwtPayload;
-
-  if (
-    !decoded?.user.roles.includes(req.params.id + "-admin") &&
-    !decoded?.user.roles.includes("super")
-  ) {
-    return res.status(403).send({ message: "Forbidden" });
-  }
-
-  // Check that the group name is unique (if it is being updated)
-  if (
-    groups.find((group: { name: string }) => group.name === req.body.name) &&
-    req.body.name !== group.name
-  ) {
-    return res.status(409).send({ message: "Group name already exists" });
-  }
-
-  // Check that the ID is not being updated
-  if (req.body.id && req.body.id !== group.id) {
-    return res.status(409).send({ message: "Cannot update group ID" });
-  }
-
-  // Overwrite the group object with the new data, not adding any new properties
-  // Also ensure that the group object is not overwritten with empty data
-  Object.keys(req.body).forEach((key) => {
-    if (Object.keys(group).includes(key) && req.body[key] !== "") {
-      group[key] = req.body[key];
+    if (!db) {
+      return res.status(500).send("Database not available");
     }
-  });
 
-  // Write the updated groups array back to the file
-  try {
-    fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
-    return res.send(group);
-  } catch (error) {
-    return res.status(500).send({ message: "Error writing to file", error });
+    // Find the group by ID
+    const groupCollection = db.collection<Group>("groups");
+    const userCollection = db.collection<User>("users");
+
+    const group = (await groupCollection.findOne({
+      id: Number(req.params.id),
+    })) as Group;
+
+    if (!group) {
+      return res.status(404).send({ message: "Group not found" });
+    }
+
+    // Check that the user is an admin of the group, or a super user
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+
+    if (
+      !decoded?.user.roles.includes(req.params.id + "-admin") &&
+      !decoded?.user.roles.includes("super")
+    ) {
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
+    // Check that the group name is unique (if it is being updated)
+    if (
+      req.body.name &&
+      req.body.name !== group.name &&
+      (await groupCollection.findOne({ name: req.body.name }))
+    ) {
+      return res.status(409).send({ message: "Group name already exists" });
+    }
+
+    // Update the group object with the new data
+    const oldname = group.name;
+    if (req.body.name) {
+      group.name = req.body.name;
+    }
+
+    if (req.body.description) {
+      group.description = req.body.description;
+    }
+
+    // Attempt to write the changes to the database
+    try {
+      await groupCollection.updateOne(
+        { id: group.id },
+        { $set: { name: group.name, description: group.description } }
+      );
+
+      // If a user is a member of the updated group, update their groups array
+      await userCollection.updateMany(
+        { groups: oldname },
+        { $set: { "groups.$": group.name } }
+      );
+
+      return res.send(group);
+    } catch (error) {
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
+    }
   }
-});
+);
 
 // Delete a group by id
-groups.delete("/api/group/:id", verifyToken, (req: Request, res: Response) => {
-  const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
+groups.delete(
+  "/api/group/:id",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-  let groupId: number;
-
-  // Find the group by name
-  try {
-    groupId = Number(req.params.id);
-  } catch (error) {
-    return res.status(400).send({ message: "Invalid group ID", error });
-  }
-  const groupIndex = groups.findIndex(
-    (group: { id: number }) => group.id === groupId
-  );
-
-  if (groupIndex === -1) {
-    return res.status(404).send({ message: "Group not found" });
-  }
-
-  // Check that the user is an admin of the group, or a super user
-  const token = req.headers.authorization?.split(" ")[1];
-  const decoded = jwt.decode(token as string) as jwt.JwtPayload;
-
-  if (
-    !decoded?.user.roles.includes(req.params.id + "-admin") &&
-    !decoded?.user.roles.includes("super")
-  ) {
-    return res.status(403).send({ message: "Forbidden" });
-  }
-
-  // Update the users.json file with by removing references to the group from ALL users
-  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-  users.forEach((user: { groups: string[]; roles: string[] }) => {
-    const gIndex = user.groups.indexOf(groups[groupIndex].name);
-    if (gIndex !== -1) {
-      user.groups.splice(gIndex, 1);
+    if (!db) {
+      return res.status(500).send("Database not available");
     }
 
-    const roleIndex = user.roles.indexOf(req.params.id + "-admin");
-    if (roleIndex !== -1) {
-      user.roles.splice(roleIndex, 1);
+    const groupCollection = db.collection<Group>("groups");
+    const userCollection = db.collection<User>("users");
+    const channelCollection = db.collection<Channel>("channels");
+
+    // Find the group by ID
+    const group = (await groupCollection.findOne({
+      id: Number(req.params.id),
+    })) as Group;
+
+    if (!group) {
+      return res.status(404).send({ message: "Group not found" });
     }
-  });
 
-  // Update the channels.json file by removing orphaned channels
-  const channels = JSON.parse(fs.readFileSync("./data/channels.json", "utf-8"));
-  channels.forEach((channel: { group: number }, index: number) => {
-    if (channel.group === groupId) {
-      channels.splice(index, 1);
+    // Check that the user is an admin of the group, or a super user
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+
+    if (
+      !decoded?.user.roles.includes(req.params.id + "-admin") &&
+      !decoded?.user.roles.includes("super")
+    ) {
+      return res.status(403).send({ message: "Forbidden" });
     }
-  });
 
-  // Remove the group from the groups array
-  groups.splice(groupIndex, 1);
+    // Remove all channels in the group (they have become orphaned)
+    await channelCollection.deleteMany;
 
-  // Write the updated groups array back to the file
-  try {
-    fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
-    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
-    fs.writeFileSync("./data/channels.json", JSON.stringify(channels, null, 2));
-    return res.send({
-      message: `Group '${req.params.id}' successfully deleted`,
-    });
-  } catch (error) {
-    return res.status(500).send({ message: "Error writing to file", error });
+    // Write the changes to the database
+    try {
+      await groupCollection.deleteOne({ id: group.id });
+      await channelCollection.deleteMany({ group: group.id });
+      await userCollection.updateMany(
+        {},
+        { $pull: { groups: group.name, roles: group.id + "-admin" } }
+      );
+
+      return res.send({
+        message: `Group '${req.params.id}' successfully deleted`,
+      });
+    } catch (error) {
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
+    }
   }
-});
+);
 
-// Get a single group by id from the groups.json file
-groups.get("/api/group/:id", verifyToken, (req: Request, res: Response) => {
-  const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
+// Get a single group by id
+groups.get(
+  "/api/group/:id",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-  let groupId: number;
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
 
-  // Find the group by ID
-  try {
-    groupId = Number(req.params.id);
-  } catch (error) {
-    return res.status(400).send({ message: "Invalid group ID", error });
+    const groupCollection = db.collection<Group>("groups");
+
+    // Find the group by ID
+    const group = (await groupCollection.findOne({
+      id: Number(req.params.id),
+    })) as Group;
+
+    if (!group) {
+      return res.status(404).send({ message: "Group not found" });
+    }
+
+    return res.send(group);
   }
-  const group = groups.find((group: { id: number }) => group.id === groupId);
-
-  if (!group) {
-    return res.status(404).send({ message: "Group not found" });
-  }
-
-  return res.send(group);
-});
+);
 
 // Add a user to a group
 groups.post(
   "/api/group/:id/user/:username",
   verifyToken,
-  (req: Request, res: Response) => {
-    const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
+  async (req: Request, res: Response) => {
+    const db = req.db;
 
-    let groupID: number;
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const groupID = Number(req.params.id);
+
+    const groups = db.collection<Group>("groups");
+    const users = db.collection<User>("users");
 
     // Find the group by ID
-    try {
-      groupID = Number(req.params.id);
-    } catch (error) {
-      return res.status(400).send({ message: "Invalid group ID", error });
-    }
-    const group = groups.find((group: { id: number }) => group.id === groupID);
+    const group = (await groups.findOne({
+      id: groupID,
+    })) as Group;
 
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
@@ -273,27 +329,36 @@ groups.post(
     // Add the user to the group (group side)
     group.users.push(req.params.username);
 
-    // Update the users.json file with the new group
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    const user = users.find(
-      (user: { username: string }) => user.username === req.params.username
-    );
+    // Get the user
+    const user = (await users.findOne({
+      username: req.params.username,
+    })) as User;
 
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
 
+    // Update the user's groups to contain the new group
     user.groups.push(group.name);
 
-    // Write the updated groups array back to the file
+    // Write the updated groups array back to the database
     try {
-      fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
-      fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
-      delete user.password; // Remove the password property from the response
+      await groups.updateOne(
+        { id: group.id },
+        { $set: { users: group.users } }
+      );
+
+      await users.updateOne(
+        { username: user.username },
+        { $set: { groups: user.groups } }
+      );
+
       user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
       return res.send({ group: group, authToken: user.authToken });
     } catch (error) {
-      return res.status(500).send({ message: "Error writing to file", error });
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
     }
   }
 );
@@ -302,17 +367,34 @@ groups.post(
 groups.delete(
   "/api/group/:id/user/:username",
   verifyToken,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const groupID = Number(req.params.id);
-    const groups = JSON.parse(fs.readFileSync("./data/groups.json", "utf-8"));
 
-    // Find the group by name
-    const group = groups.find(
-      (group: { id: number; name: string }) => group.id === groupID
-    );
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const groups = db.collection<Group>("groups");
+    const users = db.collection<User>("users");
+    const channels = db.collection<Channel>("channels");
+
+    // Find the group by ID
+    const group = (await groups.findOne({
+      id: groupID,
+    })) as Group;
 
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
+    }
+
+    const user = (await users.findOne({
+      username: req.params.username,
+    })) as User;
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
     }
 
     // Check that the user is an admin of the group, or a super user
@@ -326,60 +408,49 @@ groups.delete(
       return res.status(403).send({ message: "Forbidden" });
     }
 
-    // Find the user by username
-    const userIndex = group.users.findIndex(
-      (username: string) => username === req.params.username
-    );
-
-    if (userIndex === -1) {
-      return res.status(404).send({ message: "User not found in group" });
+    // Check that the user is in the group
+    if (!group.users.includes(req.params.username)) {
+      return res.status(409).send({ message: "User not in group" });
     }
 
     // Remove the user from the group (group side)
-    group.users.splice(userIndex, 1);
-
-    // Update the users.json file by removing references to the group from the user
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    users.forEach(
-      (user: { username: string; groups: string[]; roles: string[] }) => {
-        if (user.username === req.params.username) {
-          const groupIndex = user.groups.indexOf(group.name);
-          if (groupIndex !== -1) {
-            user.groups.splice(groupIndex, 1);
-          }
-
-          const roleIndex = user.roles.indexOf(group.id + "-admin");
-          if (roleIndex !== -1) {
-            user.roles.splice(roleIndex, 1);
-          }
-        }
-      }
+    group.users = group.users.filter(
+      (username: string) => username !== req.params.username
     );
 
-    // Update the channels.json file by removing references to the user from channels in the group
-    const channels = JSON.parse(
-      fs.readFileSync("./data/channels.json", "utf-8")
+    // Update the user by removing the group from their groups
+    user.groups = user.groups.filter(
+      (userGroup: string) => userGroup !== group.name
     );
-    channels.forEach((channel: { group: number; users: string[] }) => {
-      if (channel.group === groupID) {
-        const userIndex = channel.users.indexOf(req.params.username);
-        if (userIndex !== -1) {
-          channel.users.splice(userIndex, 1);
-        }
-      }
-    });
 
-    // Write the updated groups array back to the file
+    // Also update the admin roles if the user is an admin of the group
+    user.roles = user.roles.filter(
+      (role: string) => role !== groupID + "-admin"
+    );
+
+    // Write the updated groups array back to the database
     try {
-      fs.writeFileSync("./data/groups.json", JSON.stringify(groups, null, 2));
-      fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
-      fs.writeFileSync(
-        "./data/channels.json",
-        JSON.stringify(channels, null, 2)
+      await groups.updateOne(
+        { id: group.id },
+        { $set: { users: group.users } }
       );
+
+      await users.updateOne(
+        { username: user.username },
+        { $set: { groups: user.groups, roles: user.roles } }
+      );
+
+      // Remove the user from all channels in the group
+      await channels.updateMany(
+        { group: groupID },
+        { $pull: { users: req.params.username } }
+      );
+
       return res.send({ message: "User removed from group" });
     } catch (error) {
-      return res.status(500).send({ message: "Error writing to file", error });
+      return res
+        .status(500)
+        .send({ message: "Error writing to database", error });
     }
   }
 );
