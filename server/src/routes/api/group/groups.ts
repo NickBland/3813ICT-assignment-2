@@ -1,5 +1,4 @@
 import express, { Request, Response, Router } from "express";
-import fs from "fs";
 import User from "../../../models/user";
 import Group from "../../../models/group";
 import Channel from "../../../models/channel";
