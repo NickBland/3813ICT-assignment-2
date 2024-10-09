@@ -3,9 +3,6 @@
 
 import { Db, MongoClient } from "mongodb";
 
-// MongoDB connection string
-const url = "mongodb://localhost:27017";
-
 // Database name
 const dbName = "chatmeup";
 
@@ -13,9 +10,9 @@ const dbName = "chatmeup";
 const collections = ["users", "groups", "channels", "messages"];
 
 // Connect to MongoDB
-export const connect = async () => {
+export const connect = async (mongoURI: string) => {
   try {
-    const client = new MongoClient(url);
+    const client = new MongoClient(mongoURI);
     await client.connect();
 
     const db = client.db(dbName);
