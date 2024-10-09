@@ -297,20 +297,20 @@ users.patch(
       )
       .toArray();
 
-    // Ensure that the user updating the token is the same as the user in the JWT token
-    const token = req.headers.authorization?.split(" ")[1];
-    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
-
-    if (decoded?.user.username !== req.body.username) {
-      return res.status(403).send({ message: "Forbidden" });
-    }
-
     const user = users.find(
       (user: { username: string }) => user.username === req.body.username
     );
 
     if (!user) {
       return res.status(404).send({ message: "User not Found" });
+    }
+
+    // Ensure that the user updating the token is the same as the user in the JWT token
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+
+    if (decoded?.user.username !== req.body.username) {
+      return res.status(403).send({ message: "Forbidden" });
     }
 
     user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
