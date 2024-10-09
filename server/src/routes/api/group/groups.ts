@@ -22,7 +22,7 @@ function verifyToken(req: Request, res: Response, next: () => void) {
     req.body.user = verified;
     next();
   } catch (error) {
-    res.status(400).send({ message: "Invalid Token", error });
+    res.status(401).send({ message: "Invalid Token", error });
   }
 }
 
@@ -51,6 +51,11 @@ groups.post("/api/group", verifyToken, async (req: Request, res: Response) => {
 
   const groupCollection = db.collection<Group>("groups");
   const userCollection = db.collection<User>("users");
+
+  // Check that all required fields are present
+  if (!req.body.name || !req.body.description) {
+    return res.status(400).send("Invalid request");
+  }
 
   // Check that the group name is unique
   const group = (await groupCollection.findOne({

@@ -22,7 +22,7 @@ function verifyToken(req: Request, res: Response, next: () => void) {
     req.body.user = verified;
     next();
   } catch (error) {
-    res.status(400).send({ message: "Invalid Token", error });
+    res.status(401).send({ message: "Invalid Token", error });
   }
 }
 
@@ -118,6 +118,11 @@ channels.post(
       id: Number(req.params.group),
     })) as Group;
 
+    // Check that all required fields are present
+    if (!newChannel.name || !newChannel.description) {
+      return res.status(400).send({ message: "Invalid request" });
+    }
+
     if (!group) {
       return res.status(404).send({ message: "Group not found" });
     }
@@ -166,7 +171,7 @@ channels.post(
         { $set: { channels: group.channels } }
       );
 
-      return res.send({ channel: newChannel });
+      return res.status(201).send({ channel: newChannel });
     } catch (error) {
       return res
         .status(500)
@@ -347,7 +352,7 @@ channels.post(
         { id: selectedChannel },
         { $set: { users: channel.users } }
       );
-      return res.send({ message: "User added to channel" });
+      return res.status(201).send({ message: "User added to channel" });
     } catch (error) {
       return res
         .status(500)

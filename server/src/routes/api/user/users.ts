@@ -22,7 +22,7 @@ function verifyToken(req: Request, res: Response, next: () => void) {
     req.body.user = verified;
     next();
   } catch (error) {
-    res.status(400).send({ message: "Invalid Token", error });
+    res.status(401).send({ message: "Invalid Token", error });
   }
 }
 
@@ -47,7 +47,7 @@ users.get("/api/user", verifyToken, async (_req: Request, res: Response) => {
 });
 
 // Create a new user
-users.post("/api/user", async (req: Request, res: Response) => {
+users.post("/api/user", verifyToken, async (req: Request, res: Response) => {
   const db = req.db;
 
   if (!db) {
@@ -100,7 +100,7 @@ users.post("/api/user", async (req: Request, res: Response) => {
   // Remove the password property from the response
   delete req.body.password;
   req.body.authToken = jwt.sign({ user: req.body }, secret); // Create a JWT token for the user using the updated data
-  return res.send(req.body);
+  return res.status(201).send(req.body);
 });
 
 // Get a single user by username (without password) from the users.json file
@@ -297,20 +297,20 @@ users.patch(
       )
       .toArray();
 
-    // Ensure that the user updating the token is the same as the user in the JWT token
-    const token = req.headers.authorization?.split(" ")[1];
-    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
-
-    if (decoded?.user.username !== req.body.username) {
-      return res.status(403).send({ message: "Forbidden" });
-    }
-
     const user = users.find(
       (user: { username: string }) => user.username === req.body.username
     );
 
     if (!user) {
       return res.status(404).send({ message: "User not Found" });
+    }
+
+    // Ensure that the user updating the token is the same as the user in the JWT token
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.decode(token as string) as jwt.JwtPayload;
+
+    if (decoded?.user.username !== req.body.username) {
+      return res.status(403).send({ message: "Forbidden" });
     }
 
     user.authToken = jwt.sign({ user: user }, secret); // Create a JWT token for the user using the updated data
