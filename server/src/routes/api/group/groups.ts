@@ -52,6 +52,11 @@ groups.post("/api/group", verifyToken, async (req: Request, res: Response) => {
   const groupCollection = db.collection<Group>("groups");
   const userCollection = db.collection<User>("users");
 
+  // Check that all required fields are present
+  if (!req.body.name || !req.body.description) {
+    return res.status(400).send("Invalid request");
+  }
+
   // Check that the group name is unique
   const group = (await groupCollection.findOne({
     name: req.body.name,
