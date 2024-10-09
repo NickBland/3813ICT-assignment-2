@@ -22,7 +22,7 @@ function verifyToken(req: Request, res: Response, next: () => void) {
     req.body.user = verified;
     next();
   } catch (error) {
-    res.status(400).send({ message: "Invalid Token", error });
+    res.status(401).send({ message: "Invalid Token", error });
   }
 }
 
@@ -47,7 +47,7 @@ users.get("/api/user", verifyToken, async (_req: Request, res: Response) => {
 });
 
 // Create a new user
-users.post("/api/user", async (req: Request, res: Response) => {
+users.post("/api/user", verifyToken, async (req: Request, res: Response) => {
   const db = req.db;
 
   if (!db) {
@@ -100,7 +100,7 @@ users.post("/api/user", async (req: Request, res: Response) => {
   // Remove the password property from the response
   delete req.body.password;
   req.body.authToken = jwt.sign({ user: req.body }, secret); // Create a JWT token for the user using the updated data
-  return res.send(req.body);
+  return res.status(201).send(req.body);
 });
 
 // Get a single user by username (without password) from the users.json file

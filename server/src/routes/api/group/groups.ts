@@ -22,7 +22,7 @@ function verifyToken(req: Request, res: Response, next: () => void) {
     req.body.user = verified;
     next();
   } catch (error) {
-    res.status(400).send({ message: "Invalid Token", error });
+    res.status(401).send({ message: "Invalid Token", error });
   }
 }
 
