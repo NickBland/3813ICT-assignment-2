@@ -16,7 +16,7 @@ const corsOptions = {
 };
 const corsMiddleware = cors(corsOptions);
 
-const server = createServer(app);
+export const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*",
