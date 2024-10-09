@@ -1,41 +1,11 @@
 import { app } from "../src/server";
 
-import { before, after } from "mocha";
 import { use, expect } from "chai";
 import chaiHttp from "chai-http";
-
-import { MongoMemoryServer } from "mongodb-memory-server";
-import mongoose from "mongoose";
 
 const chai = use(chaiHttp);
 
 describe("Login", () => {
-  let mongoServer: MongoMemoryServer;
-
-  before(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
-    await mongoose.connect(uri);
-
-    const userSchema = new mongoose.Schema({
-      username: String,
-      password: String,
-    });
-
-    const User = mongoose.model("User", userSchema);
-
-    const user = new User({
-      username: "super",
-      password: "123",
-    });
-
-    await user.save();
-  });
-
-  after(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
 
   describe("POST Login Correct Password", () => {
     it("should return a 200 status", (done) => {

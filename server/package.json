@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/server.js",
-    "dev": "nodemon --files src/server.ts",
+    "dev": "cross-env NODE_ENV=dev nodemon --files src/server.ts",
     "test": "cross-env NODE_ENV=test npx mocha --config .mocharc.json --exit"
   },
   "keywords": [],
