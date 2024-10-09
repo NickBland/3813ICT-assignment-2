@@ -30,6 +30,7 @@ Chat me up is my implementation of the 3813ICT Assignment.
   - [5.3 - Files](#53---files)
   - [5.4 - Global Variables](#54---global-variables)
 - [6.0 - Server-Side Routes](#60---server-side-routes)
+- [7.0 - Testing](#70---testing)
 
 <!-- /code_chunk_output -->
 
@@ -49,7 +50,7 @@ Phase 2 consists of making the app more than just a wrapper for an API. In this 
 
 ## 2.0 - About this Git Repository
 
-This git repo has been set up as a stock-standard Angular Project. For development, I made the conscious decision to lock the [Main Branch](https://github.com/NickBland/3813ICT-assignment-1/tree/main) down, and to use a [Feature Branch Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow). By working in this manner, the main branch should always be in a 'working' state, with breaking changes and brand new features warranting their own branch for testing and development before being merged.
+This git repo has been set up as a clone of the [Phase 1 assignment](https://github.com/NickBland/3813ICT-assignment-1) I completed earlier. For development, I made the conscious decision to lock the [Main Branch](https://github.com/NickBland/3813ICT-assignment-2/tree/main) down, and to use a [Feature Branch Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow). By working in this manner, the main branch should always be in a 'working' state, with breaking changes and brand new features warranting their own branch for testing and development before being merged.
 
 ### 2.1 - Installation/Usage
 
@@ -88,7 +89,9 @@ Components should be made for most of the objects that will be displayed on scre
 
 Where data is being fetched or saved from the API, a service will need to be used. While components are used to render the data, keeping fetching and saving away from the rendering process allows for more re-usability within the codebase. This also allows components to be smaller in size and focus solely on rendering the information from these services on screen.
 
-Services will be created for users, groups, and channels. In addition, an auth service will need to be made to handle authentication between the various pages.
+Services will be created for users, groups, channels, and messages. In addition, an auth service will need to be made to handle authentication between the various pages.
+
+Of particular note is the messages service which handles the connection to the socket server. This service will be used to send and receive messages in real time, and will be used to update the messages in the chat window as they come in. This is very important, as using sockets within an Angular component can become difficult to manage, especially between states (e.g. for notifications when viewing someone's profile page, a regular API request would require constant pings to see for updates, AND require the user to actually be on the messages page to see them).
 
 ### 4.3 - Models
 
@@ -136,11 +139,17 @@ In phase 2, sockets will need to be used for real-time data transmission, and Mo
 
 To utilise JWT authentication, there needs to be a function to handle decoding and encoding of the authentication data. This function will be implemented as middleware for each of the endpoints. JWT functionality is used to authorise users based on what permissions they have in a more secure way than simply requesting them as a parameter would be.
 
+The connection to the MongoDB backend is handled by a piece of middleware that appends the connection to the database as a property of the request object. This allows for easy access to the database in each of the endpoints.
+
+While this may not be 'secure' as the connection to the database remains alive for the enture duration of the request, it is a simple way to handle the connection to the database without having to re-establish it for each request, which can cause significant latency and doesn't scale.
+
 ### 5.3 - Files
 
 As explained earlier, part 1 serves as a wrapper to the API. Since there is no functional database assigned yet, files have to be used to store data. In this case, there will be JSON files for the users, the groups, and the channels. In part 2, these files will be implemented as tables in MongoDB.
 
 In terms of layout, the node server is laid out with files in place of the api url. the `/routes/api/group/group.ts` file directly correlates to the `/api/group` endpoints. Speperating out these files in to endpoints groups serves to break the code down in to more manageable pieces, and allows for a more modular approach to design. Improvements could be made such as by seperating out each individual endpoint in to its own file, but it's better than nothing.
+
+For user uploaded files, a folder will be created to store them, referenced by a md5 hash of the uploader's username + filename. This will then be referenced in the database as a message with a file flag set to true.
 
 ### 5.4 - Global Variables
 
@@ -174,3 +183,16 @@ Global variables should rarely, if ever, be used as they create bad habits in wr
 |  /api/channel/:channelID/:username | POST       | channelID, username              | A Success or error message                                           | Add a user as a member of the channel                                                                                                                              |
 |  /api/channel/:channelID/:username | DELETE     | channelID, username              | A Success or error message                                           | Remove a user as a member of the channel                                                                                                                           |
 |  /api/channel/:channelID/:username | GET        | channelID, username              | True or False                                                        | Retrieve whether a given user is a member of the channel                                                                                                           |
+
+---
+
+## 7.0 - Testing
+
+Testing is an important part of the development process. Tests were created on the backend side using Mocha and Chai (versions 10 and 4 respectively). These tests were created to test the API endpoints, and to ensure that the routes were functioning as intended, and could handle erroneous cases.
+
+To run backend tests, first ensure you are in the server directory, and then run `npm test`. Please ensure that you have installed all dependancies prior by using `npm i`.
+
+```bash
+[...]3813ICT-assignment-2/server$ npm i
+[...]3813ICT-assignment-2/server$ npm test
+```
