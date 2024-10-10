@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx tsc",
+    "reset-db": "npx tsc && node dist/server.js -r",
     "start": "node dist/server.js",
     "dev": "cross-env NODE_ENV=dev nodemon --files src/server.ts",
     "test": "cross-env NODE_ENV=test npx mocha --config .mocharc.json --exit"

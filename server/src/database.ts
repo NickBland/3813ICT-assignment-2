@@ -102,6 +102,16 @@ export const reset = async (db: Db) => {
       messages: [],
     });
 
+    // Create a single message from super
+    await db.collection("messages").insertOne({
+      sender: "super",
+      file: false,
+      contents: "Hello, World!",
+      timestamp: new Date(),
+      channel: 1,
+      id: 1, // Manually assign an ID as this is the first message
+    });
+
     console.log("\x1b[42m Database reset successfully! \x1b[0m");
   } catch (error) {
     console.error("Failed to reset the database:", error);

@@ -35,7 +35,11 @@ export async function main() {
     const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017"; // Default to a local MongoDB instance
 
     const db = await connect(mongoURI);
-    console.log("Connected to the database!");
+    console.log(
+      "Connected to the database! %s @ %s",
+      db.databaseName,
+      mongoURI
+    );
 
     ///// RESET DATABASE /////
     if (process.argv.includes("-r")) {
