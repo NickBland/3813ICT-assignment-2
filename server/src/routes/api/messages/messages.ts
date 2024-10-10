@@ -26,10 +26,102 @@ function verifyToken(req: Request, res: Response, next: () => void) {
   }
 }
 
+// Get all messages for a channel
 messages.get(
-  "/api/messages/",
+  "/api/messages/:channelID",
   verifyToken,
   async (req: Request, res: Response) => {
-    res.send("Messages endpoint");
+    const channelID = Number(req.params.channelID);
+
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const messageCollection = db.collection<Message>("messages");
+    const channelCollection = db.collection<Channel>("channels");
+
+    // Confirm that channel exists
+
+    const channel = await channelCollection.findOne({
+      id: channelID,
+    });
+
+    if (!channel) {
+      return res.status(404).send("Channel not found");
+    }
+
+    const messages = (await messageCollection
+      .find(
+        { channel: channelID },
+        { sort: { timestamp: 1 }, projection: { _id: 0 } }
+      ) // Sort by timestamp and remove _id
+      .toArray()) as Message[];
+
+    return res.send(messages);
+  }
+);
+
+// Get a single message
+messages.get(
+  "/api/message/:messageID",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const messageID = Number(req.params.messageID);
+
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const messageCollection = db.collection<Message>("messages");
+
+    const message = await messageCollection.findOne({
+      id: messageID,
+    });
+
+    if (!message) {
+      return res.status(404).send("Message not found");
+    }
+
+    return res.send(message);
+  }
+);
+
+// Get all messages from a user
+messages.get(
+  "/api/messages/user/:username",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const username = req.params.username;
+
+    const db = req.db;
+
+    if (!db) {
+      return res.status(500).send("Database not available");
+    }
+
+    const messageCollection = db.collection<Message>("messages");
+    const userCollection = db.collection<User>("users");
+
+    // Confirm that user exists
+    const user = await userCollection.findOne({
+      username,
+    });
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    const messages = (await messageCollection
+      .find(
+        { sender: username },
+        { sort: { timestamp: 1 }, projection: { _id: 0 } }
+      )
+      .toArray()) as Message[];
+
+    return res.send(messages);
   }
 );
