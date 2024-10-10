@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../../../models/user";
 import Group from "../../../models/group";
 import Channel from "../../../models/channel";
+import Message from "../../../models/message";
 import "dotenv/config";
 
 export const users: Router = express.Router(); // Export the users router
@@ -140,10 +141,14 @@ users.put(
       return res.status(500).send("Database not available");
     }
 
-    const collection = db.collection<User>("users");
+    const userCollection = db.collection<User>("users");
+    const groupCollection = db.collection<Group>("groups");
+    const messageCollection = db.collection<Message>("messages");
 
-    const user = await collection.findOne({ username: req.params.username });
-    const users = await collection.find().toArray();
+    const user = await userCollection.findOne({
+      username: req.params.username,
+    });
+    const users = await userCollection.find().toArray();
 
     if (!user) {
       return res.status(404).send({ message: "User not Found" });
@@ -191,15 +196,32 @@ users.put(
     };
     const options = { upsert: false }; // Do NOT create a new document if it doesn't exist, error instead
 
-    // Write the updated user object back to the database
+    // Write the updates to the database
     try {
-      await collection.updateOne(filter, updatedUser, options);
+      await userCollection.updateOne(filter, updatedUser, options);
+
+      // Update the user references in the groups collection
+      await groupCollection.updateMany(
+        { users: user.username, admins: user.username },
+        {
+          $set: {
+            "users.$": updatedUser.$set.username,
+            "admins.$": updatedUser.$set.username,
+          },
+        }
+      );
+
+      // Update the user references in the messages collection
+      await messageCollection.updateMany(
+        { sender: user.username },
+        { $set: { sender: updatedUser.$set.username } }
+      );
     } catch (error) {
       return res.status(500).send({ message: "Error updating user", error });
     }
 
     // Get the new user object from the database
-    const updated = await collection
+    const updated = await userCollection
       .findOne(
         { username: updatedUser.$set.username },
         { projection: { password: 0, _id: 0 } } // Exclude password and _id from the response
