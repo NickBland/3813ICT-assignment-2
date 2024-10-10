@@ -41,6 +41,20 @@ export const sockets = (io: Server, db: Db) => {
       console.log(`${user.username} joined channel ${user.channel}`);
     });
 
+    // Handle cases where user has simply left the channel
+    socket.on("leavechannel", () => {
+      const user = userLeave(socket.id);
+      if (user) {
+        socket.leave(`channel-${user.channel}`);
+        io.to(`channel-${user.channel}`).emit("user left", user.username);
+        io.to(`channel-${user.channel}`).emit(
+          "online users",
+          retrieveOnlineUsers(user.channel)
+        );
+        console.log(`${user.username} left channel ${user.channel}`);
+      }
+    });
+
     socket.on("disconnect", () => {
       const user = userLeave(socket.id);
       if (user) {
