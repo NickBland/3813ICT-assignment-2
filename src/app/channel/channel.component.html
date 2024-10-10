@@ -35,7 +35,7 @@
 <div class="row">
     <div class="col-md-9">
         <div class="card">
-            <!-- TO BE IMPLEMENTED AS CHAT AREA -->
+            <app-message-list></app-message-list>
         </div>
     </div>
     <div class="col-md-3">
@@ -52,7 +52,7 @@
                     } @else {
                         @for (user of channel.users; track user) {
                             <li class="list-group-item">
-                                <span>{{ user }}@if (group.admins.includes(user)) { [Group Admin]}</span>    
+                                <span>{{ user }}@if (group.admins.includes(user)) { [Group Admin]}</span>
                             </li>
                         }
                         @if (isGroupAdmin) {

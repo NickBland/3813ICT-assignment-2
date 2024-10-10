@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute, RouterModule } from "@angular/router";
 import { ErrorComponent } from "../error/error.component";
+import { MessageListComponent } from "../message-list/message-list.component";
 import { ChannelService } from "../channel.service";
 import { Channel } from "../channel";
 import { Group } from "../group";
@@ -15,7 +16,12 @@ import {
 @Component({
   selector: "app-channel",
   standalone: true,
-  imports: [ErrorComponent, RouterModule, ReactiveFormsModule],
+  imports: [
+    ErrorComponent,
+    MessageListComponent,
+    RouterModule,
+    ReactiveFormsModule,
+  ],
   templateUrl: "./channel.component.html",
   styleUrl: "./channel.component.scss",
 })
