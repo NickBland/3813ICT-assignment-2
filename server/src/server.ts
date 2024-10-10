@@ -54,7 +54,7 @@ export async function main() {
     });
 
     ///// SOCKET.IO /////
-    sockets(io);
+    sockets(io, db);
 
     ///// DEFINE & USE ROUTES /////
     app.use("/", corsMiddleware, routes); // Push them to the root URL
