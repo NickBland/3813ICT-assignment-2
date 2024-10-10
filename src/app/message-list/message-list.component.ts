@@ -34,6 +34,8 @@ export class MessageListComponent implements OnInit, OnDestroy {
     if (this.userEvents) {
       this.userEvents.unsubscribe();
     }
+
+    this.messageService.leaveChannel();
   }
 
   private initIoConnection() {
