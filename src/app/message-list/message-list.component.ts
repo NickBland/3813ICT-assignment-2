@@ -50,7 +50,7 @@ export class MessageListComponent implements OnInit, OnDestroy {
       .getOnlineUsers()
       .subscribe((users: string[]) => {
         this.onlineUsers = users;
-        console.log(users);
+        // console.log(users);
       });
 
     // Now join the chat room! Grab the username from the session storage, channel from the URL params
