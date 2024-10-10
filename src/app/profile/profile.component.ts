@@ -84,6 +84,9 @@ export class ProfileComponent implements OnInit {
         sessionStorage.setItem("authToken", user.authToken ?? "");
         this.getUser();
 
+        // Also update the username session storage var in case it was changed
+        sessionStorage.setItem("username", user.username);
+
         // Update Success to be true for 5 seconds
         this.success = true;
         setTimeout(() => {
