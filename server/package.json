@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx tsc",
+    "reset-db": "npx tsc && node dist/server.js -r",
     "start": "node dist/server.js",
     "dev": "cross-env NODE_ENV=dev nodemon --files src/server.ts",
     "test": "cross-env NODE_ENV=test npx mocha --config .mocharc.json --exit"
@@ -17,7 +18,8 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "6.9"
+    "mongodb": "6.9",
+    "socket.io": "^4.8.0"
   },
   "devDependencies": {
     "@types/chai": "^5.0.0",
