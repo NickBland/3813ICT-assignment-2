@@ -213,15 +213,16 @@ export class ChannelComponent implements OnInit {
           }
         });
 
+        // ACTIVATE TOOLTIPS
         this.cdr.detectChanges(); // Trigger DOM update before initializing tooltips
 
         const tooltipTriggerList = document.querySelectorAll(
           '[data-bs-toggle="tooltip"]'
         );
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const tooltipList = [...tooltipTriggerList].map(
           (tooltipTriggerEl) => new Tooltip(tooltipTriggerEl)
         );
-        console.log(this.onlineUsers, tooltipList);
       }
     });
   }
