@@ -1,0 +1,14 @@
+.no-border {
+  // Make the border transparent to hide it for repeat messages
+  // border-top: 1px solid Transparent!important;
+  border-bottom: 1px solid Transparent !important;
+}
+
+.sender-name {
+  font-weight: bold;
+  width: 100px
+}
+.message-content {
+  margin-left: 10px;
+}
+

@@ -68,6 +68,7 @@ export const sockets = (io: Server, db: Db) => {
     });
 
     socket.on("message", async (contents) => {
+      contents = contents.contents; // Get the actual data from the contents object
       // Validate message contents
       if (
         !contents ||
@@ -75,6 +76,7 @@ export const sockets = (io: Server, db: Db) => {
         contents.contents.trim() === ""
       ) {
         console.error("Invalid message contents");
+        socket.emit("error", "Invalid message contents");
         return;
       }
 
@@ -108,7 +110,7 @@ export const sockets = (io: Server, db: Db) => {
         await messageCollection.insertOne(message);
 
         // Emit the message to the specific room (channel)
-        io.to(`channel-${message.channel}`).emit("new message", message);
+        io.to(`channel-${message.channel}`).emit("message", message);
       } catch (error) {
         console.error("Error saving message:", error);
         socket.emit("error", "Error saving message");

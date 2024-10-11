@@ -4,6 +4,7 @@ import { DefaultEventsMap } from "@socket.io/component-emitter";
 import { BehaviorSubject, Observable } from "rxjs";
 import { io, Socket } from "socket.io-client";
 import { Message } from "./message";
+import { HttpClient } from "@angular/common/http";
 
 const SERVER_URL = "http://localhost:8888";
 
@@ -12,9 +13,12 @@ const SERVER_URL = "http://localhost:8888";
 })
 export class MessageService {
   private socket!: Socket<DefaultEventsMap, DefaultEventsMap>;
+  private apiURL = "http://localhost:8888";
 
   private onlineUsersSubject = new BehaviorSubject<string[]>([]);
   onlineUsers$ = this.onlineUsersSubject.asObservable();
+
+  constructor(private httpClient: HttpClient) {}
 
   initSocket(): void {
     this.socket = io(SERVER_URL);
@@ -41,6 +45,12 @@ export class MessageService {
         observer.next(message);
       });
     });
+  }
+
+  getChannelMessages(channelID: number) {
+    return this.httpClient.get<Message[]>(
+      `${this.apiURL}/api/messages/${channelID}`
+    );
   }
 
   getOnlineUsers(): Observable<string[]> {
