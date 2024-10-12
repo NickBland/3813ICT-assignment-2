@@ -17,7 +17,17 @@ function userJoin(socketID: string, username: string, channel: string) {
 }
 
 function retrieveOnlineUsers(channel: string) {
-  return users.filter((user) => user.channel === channel);
+  const uniqueUsers = new Set<string>();
+  return users
+    .filter((user) => user.channel === channel)
+    .filter((user) => {
+      if (uniqueUsers.has(user.username)) {
+        return false;
+      } else {
+        uniqueUsers.add(user.username);
+        return true;
+      }
+    });
 }
 
 function userLeave(socketID: string) {
