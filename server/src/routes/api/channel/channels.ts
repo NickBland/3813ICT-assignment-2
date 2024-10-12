@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../../../models/user";
 import Group from "../../../models/group";
 import Channel from "../../../models/channel";
+import Message from "../../../models/message";
 import "dotenv/config";
 
 export const channels: Router = express.Router(); // Export the channels router
@@ -195,6 +196,7 @@ channels.delete(
 
     const channelCollection = db.collection<Channel>("channels");
     const groupCollection = db.collection<Group>("groups");
+    const messageCollection = db.collection<Message>("messages");
 
     // Check if the channel exists
     const channel = (await channelCollection.findOne({
@@ -221,6 +223,9 @@ channels.delete(
         { id: group.id },
         { $set: { channels: group.channels } }
       );
+
+      // Remove all messages from the channel
+      await messageCollection.deleteMany({ channel: selectedChannel });
 
       return res.send({ message: "Channel deleted" });
     } catch (error) {

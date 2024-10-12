@@ -4,6 +4,7 @@ import Group from "../../../models/group";
 import Channel from "../../../models/channel";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
+import Message from "../../../models/message";
 
 export const groups: Router = express.Router(); // Export the groups router
 
@@ -219,6 +220,7 @@ groups.delete(
     const groupCollection = db.collection<Group>("groups");
     const userCollection = db.collection<User>("users");
     const channelCollection = db.collection<Channel>("channels");
+    const messageCollection = db.collection<Message>("messages");
 
     // Find the group by ID
     const group = (await groupCollection.findOne({
@@ -240,9 +242,6 @@ groups.delete(
       return res.status(403).send({ message: "Forbidden" });
     }
 
-    // Remove all channels in the group (they have become orphaned)
-    await channelCollection.deleteMany;
-
     // Write the changes to the database
     try {
       await groupCollection.deleteOne({ id: group.id });
@@ -251,6 +250,9 @@ groups.delete(
         {},
         { $pull: { groups: group.name, roles: group.id + "-admin" } }
       );
+
+      // For each of the channels in the group.channels, delete all messages
+      await messageCollection.deleteMany({ channel: { $in: group.channels } });
 
       return res.send({
         message: `Group '${req.params.id}' successfully deleted`,

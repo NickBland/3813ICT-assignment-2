@@ -86,6 +86,7 @@ export class ProfileComponent implements OnInit {
 
         // Also update the username session storage var in case it was changed
         sessionStorage.setItem("username", user.username);
+        window.location.reload(); // Dirty trick to force navbar to update the username without creating another signal and behavior subject lol
 
         // Update Success to be true for 5 seconds
         this.success = true;
