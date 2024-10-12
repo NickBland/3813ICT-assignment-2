@@ -5,15 +5,30 @@ import { ActivatedRoute, RouterModule, Router } from "@angular/router";
 import { Group } from "../group";
 import { ErrorComponent } from "../error/error.component";
 import {
+  AbstractControl,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 import { User } from "../user";
 import { UserService } from "../user.service";
 import { AuthService } from "../auth.service";
+
+export function atLeastOneFieldValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const name = control.get("name")?.value;
+    const description = control.get("description")?.value;
+
+    if (!name && !description) {
+      return { atLeastOneFieldRequired: true };
+    }
+    return null;
+  };
+}
 
 @Component({
   selector: "app-group-profile",
@@ -32,6 +47,7 @@ export class GroupProfileComponent implements OnInit {
   isAdmin = false;
 
   channelForm: FormGroup;
+  updateGroupForm: FormGroup;
 
   users = [] as User[];
   usersToAdd = [] as string[];
@@ -61,6 +77,49 @@ export class GroupProfileComponent implements OnInit {
     this.removeUserForm = new FormGroup({
       username: new FormControl(this.usersToRemove, [Validators.required]),
     });
+
+    // Initialise the group update form
+    this.updateGroupForm = new FormGroup(
+      {
+        name: new FormControl("", [Validators.minLength(5)]),
+        description: new FormControl("", [Validators.minLength(5)]),
+      },
+      { validators: atLeastOneFieldValidator() }
+    );
+  }
+
+  // Update the group
+  updateGroup() {
+    this.isLoading = true;
+    // Update the group
+    this.groupService
+      .updateGroup(this.groupId ?? 0, {
+        name: this.updateGroupForm.value.name ?? this.group.name,
+        description:
+          this.updateGroupForm.value.description ?? this.group.description,
+      })
+      .subscribe({
+        next: () => {
+          // Re-get the group to update the user list
+          this.getGroup();
+          this.updateGroupForm.reset();
+        },
+        error: (error) => {
+          this.error = error;
+          if (this.error) {
+            if (error.status) {
+              // Get the message from the received API response
+              this.error.message = `${error.status}: ${error.error.message}`;
+            } else {
+              this.error.message = "An unknown error occurred";
+            }
+          }
+          this.isLoading = false;
+        },
+        complete: () => {
+          this.isLoading = false;
+        },
+      });
   }
 
   // Create a channel

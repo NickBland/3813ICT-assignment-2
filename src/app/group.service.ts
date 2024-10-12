@@ -24,7 +24,10 @@ export class GroupService {
   }
 
   // Update a group
-  updateGroup(id: number, group: Group): Observable<Group> {
+  updateGroup(
+    id: number,
+    group: { name: string; description: string }
+  ): Observable<Group> {
     return this.httpClient.put<Group>(`${this.apiURL}/api/group/${id}`, group);
   }
 
