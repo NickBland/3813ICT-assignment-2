@@ -133,7 +133,7 @@ While I haven't set settled on it, my current plan is to use SwaggerUI as a way 
 
 For authentication, JWT will be used. JWT is the standard for authentication and authorisation in APIs, allowing for a secure way to transmit this data over open channels.
 
-In phase 2, sockets will need to be used for real-time data transmission, and MongoDB for data storage and connectivity.
+For Phase 2, MongoDB is used for database connections and Socket.IO is used for real-time socket communication. Tests are handled using Chai + Mocha on the backend and Cyprus on the frontend.
 
 ### 5.2 - Functions
 
@@ -183,6 +183,14 @@ Global variables should rarely, if ever, be used as they create bad habits in wr
 |  /api/channel/:channelID/:username | POST       | channelID, username              | A Success or error message                                           | Add a user as a member of the channel                                                                                                                              |
 |  /api/channel/:channelID/:username | DELETE     | channelID, username              | A Success or error message                                           | Remove a user as a member of the channel                                                                                                                           |
 |  /api/channel/:channelID/:username | GET        | channelID, username              | True or False                                                        | Retrieve whether a given user is a member of the channel                                                                                                           |
+|  /api/messages/:channelID          | GET        | channelID                        | A list of Message objects                                            | Retrieve all messages for a given channel                                                                                                                          |
+|  /api/message/:messageID           | GET        | messageID                        | A Message object                                                     | Retrieve a single message from the database, given the ID                                                                                                          |
+|  /api/messages/user/:username      | GET        | username                         | A list of Message objects                                            | Retrieve all messages sent by a user                                                                                                                               |
+|  /api/message                      | POST       | body: Message                    | The created Message Object                                           | Save a new message to the database                                                                                                                                 |
+
+### 6.1 - Sockets
+
+Sockets are handled using socket.io. Upon entering a channel, the user is connected to the room of the socket. Rooms are created on a per-channel basis to ensure broadcasted messages are only sent to users currently connected. When a user joins or leaves a channel, the `online users` event is broadcasted containing a list of people currently online in the channel. This is useful to track online statefulness in the app. Additionally, the `user joined` and `user left` events are also broadcast. While these were not implemented in the final product, the idea was to have a message appear for when these users do something, rather than relying on the user looking over to the status icon. Messages are sent via the `messages` event, and are then processed on the server to save and relay them back on the `new message`.
 
 ---
 
@@ -195,4 +203,16 @@ To run backend tests, first ensure you are in the server directory, and then run
 ```bash
 [...]3813ICT-assignment-2/server$ npm i
 [...]3813ICT-assignment-2/server$ npm test
+```
+
+E2E testing on the front end is carried out using Cyprus. You can invoke testing with Cyprus through the `ng e2e` command. The tests can then be conducted in the browser window.
+
+```bash
+[...]3813ICT-assignment-2/src$ ng e2e
+```
+
+In the browser window that pops up, each of the testing categories can be selected to view individual results. Please note that the server must be running in a seperate terminal session like so:
+
+```bash
+[...]3813ICT-assignment-2/server$ npm run dev
 ```
