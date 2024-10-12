@@ -31,9 +31,20 @@ export class UserListComponent implements OnInit {
   constructor(private userService: UserService) {
     // Initialise the user form
     this.userForm = new FormGroup({
-      username: new FormControl("", [Validators.minLength(3)]),
-      email: new FormControl("", [Validators.minLength(5), Validators.email]),
-      password: new FormControl("", [Validators.minLength(3)]),
+      username: new FormControl("", [
+        Validators.required,
+        Validators.minLength(3),
+      ]),
+      name: new FormControl("", [Validators.required, Validators.minLength(5)]),
+      email: new FormControl("", [
+        Validators.required,
+        Validators.minLength(5),
+        Validators.email,
+      ]),
+      password: new FormControl("", [
+        Validators.required,
+        Validators.minLength(3),
+      ]),
     });
   }
 
@@ -103,6 +114,7 @@ export class UserListComponent implements OnInit {
 
     // Assign the form values to the new user
     newUser.username = this.userForm.value.username;
+    newUser.name = this.userForm.value.name;
     newUser.email = this.userForm.value.email;
     newUser.password = this.userForm.value.password;
 
