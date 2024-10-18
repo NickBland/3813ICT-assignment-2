@@ -57,7 +57,8 @@ This git repo has been set up as a clone of the [Phase 1 assignment](https://git
 1. Clone the repo with `git clone https://github.com/NickBland/3813ICT-assignment-2.git assignment-2`.
 2. Enter the repo with `cd assignment-2`.
 3. Initialise the node modules for both the server and frontend with `npm i && cd server && npm i && cd ..`.
-4. Serve the application with `npm start`, and you should be able to access it at [http://localhost:4200](http://localhost:4200).
+4. In one terminal session, start the backend server `cd server && npm run dev`
+5. In another session, start the frontend with `npm start` OR `ng s` if you have the Angular Toolchain installed. You should be able to access it at [http://localhost:4200](http://localhost:4200).
 
 ---
 
